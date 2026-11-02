@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Calcula a dissipação térmica de inversores PowerFlex 523, 525, 753 e 755 e recomenda a climatização Rittal do painel.">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>Balanço Térmico de Painel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: folha de cálculo de painel. Entradas à esquerda, veredito e escada de soluções à direita, memorial e dados abaixo.
+   Neutros derivados do RAL 7035, a cor de gabinete, com azul de placa de identificação como acento. */
+:root {
+  --bg: #e9eaea; --panel: #f6f6f5; --field: #ffffff; --line: #c6c8c8; --line-strong: #8f9393;
+  --fg: #20262a; --muted: #586066; --accent: #0b5a8a; --accent-fg: #ffffff; --accent-soft: #d9e7ef;
+  --ok: #1d6b3f; --ok-soft: #dcecE2; --warn: #8a5600; --warn-soft: #f5e8cf; --bad: #a12b23; --bad-soft: #f5dfdc;
+  --display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 56px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 4.4vw, 42px); font-weight: 700; line-height: 1.05; }
+h2 { font-size: 21px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.sub { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.col { display: grid; gap: 22px; min-width: 0; }
+section.sheet { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.head-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.note { color: var(--muted); font-size: 13.5px; }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); min-width: 0; }
+input, select { font: 400 15px var(--body); color: var(--fg); background: var(--field); border: 1px solid var(--line-strong); padding: 7px 9px; width: 100%; min-width: 0; border-radius: 2px; }
+input[type=number] { font-family: var(--mono); font-size: 14px; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: 600 14px var(--body); cursor: pointer; border-radius: 2px; padding: 8px 12px; border: 1px solid var(--accent); background: transparent; color: var(--accent); }
+button:hover { background: var(--accent-soft); }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.drive { border-top: 1px solid var(--line); padding-top: 12px; display: grid; gap: 8px; }
+.drive-sel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+.drive-sel .wide { grid-column: 1 / -1; }
+.drive-top { display: grid; grid-template-columns: 70px 78px minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.code-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+.drive-top .rm { padding: 7px 10px; border-color: var(--line-strong); color: var(--muted); }
+.drive-info { font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+.drive-info .w { font-family: var(--mono); font-weight: 500; }
+.drive-info .miss { color: var(--bad); }
+.drive-extra { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.verdict { border: 2px solid var(--accent); background: var(--accent-soft); padding: 16px 18px; display: grid; gap: 6px; }
+.verdict.fail { border-color: var(--bad); background: var(--bad-soft); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.vtitle { font: 700 clamp(25px, 3.4vw, 33px)/1.1 var(--display); }
+.nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); }
+.num { padding: 10px 12px; border-left: 1px solid var(--line); min-width: 0; }
+.num:first-child { border-left: 0; }
+.num b { display: block; font: 500 21px/1.2 var(--mono); }
+.num span { font-size: 12.5px; color: var(--muted); }
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; }
+.rung { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 11px 12px; border: 1px solid var(--line); border-top-width: 0; }
+.rung:first-child { border-top-width: 1px; }
+.rung.pick { background: var(--accent-soft); border-color: var(--accent); border-top-width: 1px; }
+.rung p { grid-column: 1 / -1; font-size: 14px; }
+.rung .prod { font-weight: 600; }
+.chip { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 2px; align-self: start; white-space: nowrap; }
+.chip.pick { background: var(--accent); color: var(--accent-fg); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.no { background: var(--bad-soft); color: var(--bad); }
+.alert { font-size: 14px; padding: 8px 11px; }
+.alert.warn { background: var(--warn-soft); color: var(--warn); }
+.alert.tip { background: var(--ok-soft); color: var(--ok); }
+.alerts { display: grid; gap: 6px; }
+pre.memo { margin: 0; font: 400 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--field); border: 1px solid var(--line); padding: 12px; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font: 600 16px var(--display); }
+.tw { overflow-x: auto; margin-top: 10px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); }
+td.n, th.n { text-align: right; font-family: var(--mono); font-size: 13px; }
+ul.src { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; }
+a { color: var(--accent); }
+@media (max-width: 940px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .wrap { padding: 20px 16px 40px; }
+  .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .num:nth-child(3) { border-left: 0; }
+  .num:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .drive-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .drive-top .mount { grid-column: 1 / -1; grid-row: 2; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Balanço Térmico de Painel</h1>
+    <p class="sub">Some as perdas dos inversores PowerFlex 523, 525, 753 e 755, informe o gabinete e o ambiente, e veja qual solução de climatização Rittal atende o painel. O projeto abaixo é um exemplo: troque pelos seus dados.</p>
+  </header>
+
+  <div class="layout">
+    <div class="col">
+      <section class="sheet" aria-labelledby="h-inv">
+        <div class="head-row">
+          <h2 id="h-inv">1. Inversores</h2>
+          <button type="button" id="add">Adicionar inversor</button>
+        </div>
+        <p class="note">Escolha PowerFlex 523, 525, 753 ou 755 em cada linha, ou adicione direto pelo código de catálogo.</p>
+        <div class="code-row">
+          <label for="code">Adicionar por código<input id="code" autocomplete="off" placeholder="20F11ND077 ou 25B-D017N114"></label>
+          <button type="button" id="addcode">Adicionar</button>
+        </div>
+        <p class="note" id="codemsg" aria-live="polite"></p>
+        <div id="drives" style="display:grid;gap:12px"></div>
+        <label for="other">Outras perdas no painel (reatores, fontes, contatores, disjuntores), em W
+          <input id="other" type="number" min="0" step="1" value="120">
+        </label>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-gab">
+        <h2 id="h-gab">2. Gabinete</h2>
+        <div class="grid3">
+          <label for="w">Largura (mm)<input id="w" type="number" min="100" step="10" value="800"></label>
+          <label for="h">Altura (mm)<input id="h" type="number" min="100" step="10" value="2000"></label>
+          <label for="d">Profundidade (mm)<input id="d" type="number" min="100" step="10" value="600"></label>
+        </div>
+        <div class="grid2">
+          <label for="inst">Instalação (IEC 60890)
+            <select id="inst">
+              <option value="free">Isolado, livre em todos os lados</option>
+              <option value="wall" selected>Isolado, encostado na parede</option>
+              <option value="endfree">Ponta de fila, livre</option>
+              <option value="endwall">Ponta de fila, na parede</option>
+              <option value="midfree">Meio de fila, livre</option>
+              <option value="midwall">Meio de fila, na parede</option>
+              <option value="midcover">Meio de fila, na parede, teto coberto</option>
+            </select>
+          </label>
+          <label for="k">Material e coeficiente k
+            <select id="k">
+              <option value="5.5" selected>Chapa de aço, 5,5 W/m²K</option>
+              <option value="3.7">Aço inox, 3,7 W/m²K</option>
+              <option value="12">Alumínio, 12 W/m²K</option>
+              <option value="3.5">Poliéster, 3,5 W/m²K</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-amb">
+        <h2 id="h-amb">3. Ambiente e critérios</h2>
+        <div class="grid3">
+          <label for="tu">Ambiente máx. Tu (°C)<input id="tu" type="number" step="1" value="35"></label>
+          <label for="ti">Interna máx. Ti (°C)<input id="ti" type="number" step="1" value="45"></label>
+          <label for="alt">Altitude (m)<input id="alt" type="number" min="0" step="10" value="760"></label>
+          <label for="hz">Frequência
+            <select id="hz"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select>
+          </label>
+          <label for="margin">Margem (%)<input id="margin" type="number" min="0" step="1" value="10"></label>
+          <label for="filters">Filtros de saída
+            <select id="filters"><option value="1" selected>1 por ventilador</option><option value="2">2 por ventilador</option></select>
+          </label>
+        </div>
+        <label for="env">Ar do ambiente
+          <select id="env">
+            <option value="clean" selected>Limpo ou com poeira leve, que o filtro retém</option>
+            <option value="dirty">Óleo, poeira condutiva ou atmosfera agressiva</option>
+          </select>
+        </label>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <div class="nums" id="nums"></div>
+      <div class="alerts" id="alerts"></div>
+      <section class="sheet" aria-labelledby="h-esc">
+        <h2 id="h-esc">Soluções avaliadas, da mais simples à mais robusta</h2>
+        <ol class="ladder" id="ladder"></ol>
+      </section>
+      <section class="sheet" aria-labelledby="h-mem">
+        <div class="head-row">
+          <h2 id="h-mem">Memorial de cálculo</h2>
+          <button type="button" id="copy">Copiar memorial</button>
+        </div>
+        <pre class="memo" id="memo"></pre>
+      </section>
+    </div>
+  </div>
+
+  <section class="sheet" aria-labelledby="h-dados">
+    <h2 id="h-dados">Dados e limites</h2>
+    <details>
+      <summary>Perdas dos inversores (W)</summary>
+      <div class="tw" id="t-drives"></div>
+    </details>
+    <details>
+      <summary>Produtos Rittal usados na seleção</summary>
+      <div class="tw" id="t-rittal"></div>
+    </details>
+    <details open>
+      <summary>O que conferir antes de especificar</summary>
+      <ul class="src" style="margin-top:10px">
+        <li>A tabela do PowerFlex 750 vem da revisão B da publicação 750-TD001, antiga e a única cuja tabela completa consegui ler. Revisões novas podem trazer valores diferentes, e a Frame 1 tem valores próprios. Confira na revisão atual. Os valores do 753 e do 755 são os mesmos por código, com o regime Normal Duty, e valem para 400 V e 480 V. Os 753 e 755 de 600 V e 690 V e o 755T ficam de fora porque as fontes que consegui ler divergem entre revisões: lance como Outro inversor, com o valor do manual.</li>
+        <li>O PowerFlex 520 usa o artigo 580997 da Rockwell (2019). Ele diverge da 520-TD001D (2014) nas linhas de 4 A a 480 V: 62 W e 63 W no artigo, contra 80 W e 81 W na publicação. Usei o artigo por ser mais recente.</li>
+        <li>Carga abaixo de 100% é só uma estimativa: aplica a proporção de um único exemplo da Rockwell (40 W fixos + 90 W variáveis, no 25B-D010N114), que a própria Rockwell diz não ter sido testado em laboratório.</li>
+        <li>As vazões de ventilador são os valores com filtro de saída das páginas da Rittal, e não a vazão livre. O SK 3240.100 aparece com vazão menor em 60 Hz na própria fonte. Confira esse modelo na ficha.</li>
+        <li>A saída de refrigeração entre 35 °C e 50 °C de ambiente é interpolada entre L35 L35 e L35 L50. Para Ti abaixo de 35 °C, ou para decisão final, use as curvas da ficha ou o software RiTherm.</li>
+        <li>Os trocadores de calor vieram de buscas em páginas da Rittal e de revendas. Confirme os W/K na ficha antes de comprar.</li>
+        <li>Os coeficientes de área da IEC 60890 e os valores de k fora do aço foram escritos de memória técnica, sem conferência na norma. Só o k = 5,5 W/m²K do aço e a fórmula Qs = A·k·ΔT foram confirmados em fonte da Rittal. O fator 3,1 e a correção por altitude foram deduzidos da física do ar.</li>
+        <li>A regra de ΔT mínimo de 5 K para ventilador é um critério de projeto desta ferramenta. Disponibilidade e tensão para o Brasil devem ser confirmadas com a Rittal.</li>
+        <li>Ferramenta independente de apoio ao dimensionamento, sem vínculo com a Rockwell Automation ou a Rittal.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Fontes</summary>
+      <ul class="src" style="margin-top:10px">
+        <li><a href="https://support.rockwellautomation.com/cc/okcsFattachCustom/get/580997_4">Rockwell, artigo 580997: Watts Loss do PowerFlex 520</a></li>
+        <li><a href="https://www.ideadigitalcontent.com/files/11447/520-td001_-en-e-ID-2016.pdf">Rockwell 520-TD001D: especificações e códigos de catálogo</a></li>
+        <li><a href="https://www.unisgroup.cz/pdf/EN/AllenBradley-PowerFlex750series-Technicaldata.pdf">Rockwell 750-TD001B: Approximate Watts Loss, PowerFlex 750</a></li>
+        <li><a href="https://www.rittal.de/downloads/eBook/TSH/EN/climate_control/pubData/SEO/Page_6.html">Rittal, catálogo técnico: bases de cálculo de climatização</a></li>
+        <li><a href="https://www.rittal.com/com-en/products/PG20231215KLI101/PG20231215KLI102/PG20240718KLI001/PRO0299?variantId=3243100">Rittal: ventiladores com filtro TopTherm</a></li>
+        <li><a href="https://www.rittal.com/com-en/products/PG20231215KLI101/PG20231215KLI103/PRO136367?variantId=3303500">Rittal: unidades de refrigeração TopTherm Blue e</a></li>
+        <li><a href="https://www.rittal.com/pdf-creator/variant/ca-en/3128100">Rittal: trocador de calor ar/ar SK 3128.100</a></li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script id="engine">
+/* ---------- Dados ---------- */
+// Perda total em W, artigo Rockwell 580997. Colunas: código, kW, A, W.
+const PF520_GROUPS = [
+  ["100–120 V 1~", [["V1P6N104",.2,1.6,20],["V2P5N104",.4,2.5,27],["V4P8N104",.75,4.8,53],["V6P0N104",1.1,6,67]]],
+  ["200–240 V 1~", [["A1P6N104",.2,1.6,20],["A2P5N104",.4,2.5,29],["A4P8N104",.75,4.8,50],["A8P0N104",1.5,8,81],["A011N104",2.2,11,111]]],
+  ["200–240 V 1~ com filtro EMC", [["A1P6N114",.2,1.6,20],["A2P5N114",.4,2.5,29],["A4P8N114",.75,4.8,53],["A8P0N114",1.5,8,84],["A011N114",2.2,11,116]]],
+  ["200–240 V 3~", [["B1P6N104",.2,1.6,20],["B2P5N104",.4,2.5,29],["B5P0N104",.75,5,50],["B8P0N104",1.5,8,79],["B011N104",2.2,11,107],["B017N104",4,17.5,148],["B024N104",5.5,24,259],["B032N104",7.5,32.2,323],["B048N104",11,48.3,584],["B062N104",15,62.1,708]]],
+  ["380–480 V 3~", [["D1P4N104",.4,1.4,27],["D2P3N104",.75,2.3,37],["D4P0N104",1.5,4,62],["D6P0N104",2.2,6,86],["D010N104",4,10.5,129],["D013N104",5.5,13,170],["D017N104",7.5,17,221],["D024N104",11,24,303],["D030N104",15,30,387]]],
+  ["380–480 V 3~ com filtro EMC", [["D1P4N114",.4,1.4,27],["D2P3N114",.75,2.3,37],["D4P0N114",1.5,4,63],["D6P0N114",2.2,6,88],["D010N114",4,10.5,133],["D013N114",5.5,13,175],["D017N114",7.5,17,230],["D024N114",11,24,313],["D030N114",15,30,402],["D037N114",18.5,37,602],["D043N114",22,43,697]]],
+  ["525–600 V 3~", [["E0P9N104",.4,.9,22],["E1P7N104",.75,1.7,32],["E3P0N104",1.5,3,50],["E4P2N104",2.2,4.2,65],["E6P6N104",4,6.6,95],["E9P9N104",5.5,9.9,138],["E012N104",7.5,12,164],["E019N104",11,19,290],["E022N104",15,22,336],["E027N104",18.5,27,466],["E032N104",22,32,562]]],
+];
+// 750-TD001B, regime Normal Duty. Colunas: código, kW ou HP, A, W externos, W internos, W totais.
+const PF750_400 = [["C2P1",.75,2.1,16,55,71],["C3P5",1.5,3.5,26,57,83],["C5P0",2.2,5,39,58,97],["C8P7",4,8.7,75,64,139],["C011",5.5,11.5,108,70,178],["C015",7.5,15.4,161,80,241],["C022",11,22,225,86,311],["C030",15,30,300,103,403],["C037",18.5,37,362,115,477],["C043",22,43,505,126,631],["C060",30,60,487,130,617],["C072",37,72,615,147,762],["C085",45,85,705,162,867],["C104",55,104,928,201,1129],["C140",75,140,1239,319,1558],["C170",90,170,1381,300,1681],["C205",110,205,1893,381,2274],["C260",132,260,2449,502,2951],["C302",160,302,2566,461,3027],["C367",200,367,3322,586,3908],["C456",250,456,3922,743,4665],["C460",250,460,4779,1090,5869],["C540",315,540,5316,1216,6532],["C567",315,567,5652,1298,6950],["C650",355,650,7011,1577,8588],["C750",400,750,7577,1726,9303],["C770",400,770,8086,1848,9934]];
+const PF750_480 = [["D2P1",1,2.1,17,60,77],["D3P4",2,3.4,27,61,88],["D5P0",3,5,41,63,104],["D8P0",5,8,71,68,139],["D011",7.5,11,108,74,182],["D014",10,14,149,81,230],["D022",15,22,237,91,328],["D027",20,27,273,101,374],["D034",25,34,368,115,483],["D040",30,40,503,126,629],["D052",40,52,422,125,547],["D065",50,65,559,144,703],["D077",60,77,646,158,804],["D096",75,96,855,189,1044],["D125",100,125,1109,299,1408],["D156",125,156,1299,294,1593],["D186",150,186,1718,358,2076],["D248",200,248,2384,492,2876],["D302",250,302,2704,491,3195],["D361",300,361,3409,606,4015],["D415",350,415,3604,683,4287],["D430",350,430,4385,971,5356],["D485",400,485,5091,1126,6217],["D545",450,545,5649,1253,6902],["D617",500,617,6942,1489,8431],["D710",600,710,7631,1659,9290],["D740",650,740,8133,1776,9909]];
+const CABINET_750 = new Set(["C460","C540","C567","C650","C750","C770","D430","D485","D545","D617","D710","D740"]);
+
+// Ventiladores 230 V. Vazão em m³/h em [50 Hz, 60 Hz]: livre, com 1 e com 2 filtros de saída.
+const FANS = [
+  {sk:"3237.100",filter:"3237.200",free:[20,25],f1:[15,18],f2:[16,20],cut:"92 × 92",db:[38,43]},
+  {sk:"3238.100",filter:"3238.200",free:[52,63],f1:[36,42],f2:[46,54],cut:"124 × 124",db:[46,49]},
+  {sk:"3239.100",filter:"3239.200",free:[100,115],f1:[74,87],f2:[84,98],cut:"177 × 177",db:[46,49]},
+  {sk:"3240.100",filter:"3240.200",free:[175,155],f1:[130,110],f2:[159,135],cut:"224 × 224",db:[51,46]},
+  {sk:"3241.100",filter:"3240.200",free:[225,245],f1:[171,182],f2:[200,217],cut:"224 × 224",db:[54,56]},
+  {sk:"3243.100",filter:"3243.200",free:[540,590],f1:[405,460],f2:[475,520],cut:"292 × 292",db:[59,61]},
+  {sk:"3244.100",filter:"3243.200",free:[700,770],f1:[485,520],f2:[570,630],cut:"292 × 292",db:[65,66]},
+];
+const HEX = [{sk:"3127.100",qw:30,dim:"400 × 950 × 205"},{sk:"3128.100",qw:45,dim:"400 × 950 × 205"},{sk:"3129.100",qw:60,dim:"400 × 950 × 225"}];
+// Blue e, kW em [50 Hz, 60 Hz].
+const COOL = [
+  {sk:"3302.100",l35:[.31,.33],l50:[.15,.18],v:"230 V 1~",dim:"280 × 550 × 140",ref:"R-513A"},
+  {sk:"3303.500",l35:[.52,.6],l50:[.28,.34],v:"230 V 1~",dim:"280 × 550 × 210",ref:"R-513A"},
+  {sk:"3361.500",l35:[.82,.82],l50:[.59,.6],v:"230 V 1~",dim:"280 × 550 × 280",ref:"R-513A"},
+  {sk:"3304.500",l35:[1.1,1.25],l50:[.91,.9],v:"230 V 1~",dim:"400 × 950 × 260",ref:"R-513A"},
+  {sk:"3305.500",l35:[1.6,1.73],l50:[1.18,1.26],v:"230 V 1~",dim:"400 × 950 × 260",ref:"R-513A"},
+  {sk:"3328.500",l35:[2.1,2.39],l50:[1.52,1.76],v:"230 V 1~",dim:"400 × 1580 × 295",ref:"R-513A"},
+  {sk:"3329.500",l35:[2.55,2.6],l50:[1.8,1.8],v:"230 V 1~",dim:"400 × 1580 × 295",ref:"R-513A"},
+  {sk:"3332.540",l35:[3.95,4.35],l50:[3.02,3.52],v:"400 V 3~ 50 Hz / 460 V 3~ 60 Hz",dim:"500 × 1580 × 340",ref:"R134a",eol:true},
+];
+
+/* ---------- Catálogo ---------- */
+const CATALOG = new Map();
+PF520_GROUPS.forEach(([grp, rows]) => rows.forEach(([c,kw,a,w]) => CATALOG.set(c, {
+  key:c, grp, rating:`${fmt(kw,2)} kW · ${fmt(a,1)} A`, total:w, ext:null, int:null, flange:false })));
+PF750_400.forEach(([c,kw,a,e,i,t]) => CATALOG.set(c, { key:c, grp:"400 V 3~", rating:`${fmt(kw,2)} kW ND · ${fmt(a,1)} A`, total:t, ext:e, int:i, flange:!CABINET_750.has(c) }));
+PF750_480.forEach(([c,hp,a,e,i,t]) => CATALOG.set(c, { key:c, grp:"480 V 3~", rating:`${fmt(hp,1)} HP ND · ${fmt(a,1)} A`, total:t, ext:e, int:i, flange:!CABINET_750.has(c) }));
+
+function fmt(n, d=0) { return Number(n).toLocaleString("pt-BR", {maximumFractionDigits:d, minimumFractionDigits:0}); }
+
+/* ---------- Modelos ---------- */
+const MODELS = ["PowerFlex 525","PowerFlex 523","PowerFlex 755","PowerFlex 753","Outro"];
+const PREFIX = {"PowerFlex 523":"25A-","PowerFlex 525":"25B-","PowerFlex 753":"20F…","PowerFlex 755":"20G…"};
+// O 525 não tem as potências de 0,2 kW. O 753 não tem as Frames 8+ da linha 2xG.
+function optionsFor(model) {
+  let keys=[];
+  if (model==="PowerFlex 523") PF520_GROUPS.forEach(([,rows])=>rows.forEach(r=>keys.push(r[0])));
+  if (model==="PowerFlex 525") PF520_GROUPS.forEach(([,rows])=>rows.forEach(r=>{ if(!r[0].includes("1P6")) keys.push(r[0]); }));
+  if (model==="PowerFlex 755") keys=[...PF750_400,...PF750_480].map(r=>r[0]);
+  if (model==="PowerFlex 753") keys=[...PF750_400,...PF750_480].map(r=>r[0]).filter(k=>!CABINET_750.has(k));
+  return keys.map(k=>CATALOG.get(k));
+}
+function modelFromCode(text, d) {
+  const t=String(text||"").toUpperCase().trim();
+  const guess = t.startsWith("25A")?"PowerFlex 523":t.startsWith("25B")?"PowerFlex 525":t.startsWith("20F")?"PowerFlex 753":t.startsWith("20G")||t.startsWith("21G")?"PowerFlex 755":d.ext!==null?"PowerFlex 755":"PowerFlex 525";
+  if (optionsFor(guess).some(o=>o.key===d.key)) return guess;
+  return guess==="PowerFlex 525"?"PowerFlex 523":"PowerFlex 755";
+}
+
+function findDrive(text) {
+  const t = String(text||"").toUpperCase().replace(/\s+/g,"");
+  if (!t) return null;
+  let m = t.match(/^25[AB]-?([VABDE](?:\dP\d|\d{3})N1[01]4)/);
+  if (m && CATALOG.has(m[1])) return CATALOG.get(m[1]);
+  if (CATALOG.has(t)) return CATALOG.get(t);
+  if (/^2[01][FG]/.test(t) || t.startsWith("2XG")) {
+    const body = t.replace(/…|\.\.\./g,"").slice(3);
+    const re = /[CD](?:\dP\d|\d{3})/g; let x;
+    while ((x = re.exec(body))) if (CATALOG.has(x[0])) return CATALOG.get(x[0]);
+  }
+  return null;
+}
+
+/* ---------- Cálculo ---------- */
+function surfaceArea(wMm, hMm, dMm, inst) {
+  const W=wMm/1000, H=hMm/1000, D=dMm/1000;
+  switch (inst) {
+    case "free": return 1.8*H*(W+D)+1.4*W*D;
+    case "wall": return 1.4*W*(H+D)+1.8*D*H;
+    case "endfree": return 1.4*D*(H+W)+1.8*W*H;
+    case "endwall": return 1.4*H*(W+D)+1.4*W*D;
+    case "midfree": return 1.8*W*H+1.4*W*D+D*H;
+    case "midwall": return 1.4*W*(H+D)+D*H;
+    case "midcover": return 1.4*W*H+0.7*W*D+D*H;
+  }
+  return 0;
+}
+function altitudeFactor(h) { return 3.1/Math.pow(1-2.25577e-5*Math.max(0,h), 5.25588); }
+// Parte fixa de 31% tirada do exemplo Rockwell: 40 W + carga × 90 W.
+function loadFactor(pct) { const L=Math.min(Math.max(pct,0),100)/100; return L>=1?1:0.31+0.69*L; }
+function driveLoss(line) {
+  const d = line.model==="Outro" ? null : findDrive(line.cat);
+  const lf = loadFactor(line.load);
+  if (!d) return {d:null, w:(+line.manualW||0)*lf*line.qty, ext:0, savable:0};
+  const flange = line.flange && d.flange;
+  const unit = flange ? d.int : d.total;
+  return {d, w:unit*lf*line.qty, savable:(d.flange&&!flange)?d.ext*lf*line.qty:0};
+}
+function coolingAt(c, hzi, tu) {
+  const a=c.l35[hzi], b=c.l50[hzi];
+  if (tu<=35) return a*1000;
+  if (tu>=50) return b*1000;
+  return (a+(b-a)*(tu-35)/15)*1000;
+}
+function compute(p) {
+  const hzi = p.hz===50?0:1;
+  const lines = p.drives.map(l => ({...l, ...driveLoss(l)}));
+  const driveW = lines.reduce((s,l)=>s+l.w,0);
+  const Qv = driveW+p.other;
+  const Qd = Qv*(1+p.margin/100);
+  const A = surfaceArea(p.w,p.h,p.d,p.inst);
+  const dT = p.ti-p.tu;
+  const Qs = A*p.k*dT;
+  const f = altitudeFactor(p.alt);
+  const V = dT>0 ? f*Qd/dT : Infinity;
+  const savable = lines.reduce((s,l)=>s+l.savable,0);
+  const rungs = [];
+
+  // Convecção natural
+  rungs.push(dT<=0
+    ? {id:"nat",t:"Convecção natural",ok:false,why:`O ambiente não está abaixo da temperatura interna admitida, então as paredes não retiram calor.`}
+    : Qd<=Qs ? {id:"nat",t:"Convecção natural",ok:true,prod:"Sem ventilação forçada",why:`As paredes dissipam ${fmt(Qs)} W e a carga é de ${fmt(Qd)} W.`}
+    : {id:"nat",t:"Convecção natural",ok:false,why:`As paredes dissipam ${fmt(Qs)} W e faltam ${fmt(Qd-Qs)} W para a carga de ${fmt(Qd)} W.`});
+
+  // Ventilador com filtro
+  let r = {id:"fan",t:"Ventilador com filtro TopTherm",ok:false};
+  if (p.env==="dirty") r.why="O ar de fora entraria no painel, e o filtro não protege contra óleo, poeira condutiva ou atmosfera agressiva.";
+  else if (dT<=0) r.why="O ar de fora está tão quente quanto a temperatura interna admitida ou mais, então a ventilação não resfria o painel.";
+  else if (dT<5) r.why=`ΔT de ${fmt(dT,1)} K é pequeno demais: abaixo de 5 K a vazão cresce muito e o interior fica colado na temperatura ambiente.`;
+  else if (p.tu>55) r.why="O ambiente passa dos 55 °C, limite de operação dos ventiladores.";
+  else {
+    const key = p.filters===2?"f2":"f1";
+    let found=null;
+    for (let n=1;n<=4&&!found;n++) for (const m of FANS) if (m[key][hzi]*n>=V) { found={m,n,q:m[key][hzi]}; break; }
+    if (found) {
+      const {m,n,q}=found;
+      r.ok=true; r.fan=found;
+      r.prod=`${n>1?n+" × ":""}SK ${m.sk} + ${n*p.filters} × filtro de saída SK ${m.filter}`;
+      r.why=`Vazão exigida de ${fmt(V)} m³/h. ${n>1?`Cada unidade entrega ${fmt(q)} m³/h, ${fmt(q*n)} m³/h no total`:`A unidade entrega ${fmt(q)} m³/h`} com ${p.filters} filtro${p.filters>1?"s":""} de saída a ${p.hz} Hz. Recorte de ${m.cut} mm, ${m.db[hzi]} dB(A).`;
+    } else r.why=`A vazão exigida de ${fmt(V)} m³/h passa de 4 ventiladores do maior modelo.`;
+  }
+  rungs.push(r);
+
+  // Trocador ar/ar
+  r = {id:"hex",t:"Trocador de calor ar/ar TopTherm",ok:false};
+  if (dT<=0) r.why="Precisa de ambiente mais frio que a temperatura interna admitida.";
+  else {
+    const qw=(Qd-Qs)/dT; r.qw=qw; let found=null;
+    if (qw<=0) r.why="Não é necessário: as paredes já dão conta da carga.";
+    else {
+      for (let n=1;n<=3&&!found;n++) for (const m of HEX) if (m.qw*n>=qw) { found={m,n}; break; }
+      if (found) { r.ok=true; r.hex=found; r.prod=`${found.n>1?found.n+" × ":""}SK ${found.m.sk}`; r.why=`Potência específica exigida de ${fmt(qw,1)} W/K, com ${fmt(found.m.qw*found.n)} W/K disponíveis. Mantém o circuito interno fechado, em IP 54.`; }
+      else r.why=`A potência específica exigida de ${fmt(qw,1)} W/K passa de 3 trocadores do maior modelo.`;
+    }
+  }
+  rungs.push(r);
+
+  // Refrigeração
+  r = {id:"cool",t:"Unidade de refrigeração Blue e",ok:false};
+  const Qk = Qd-Qs; r.qk=Qk;
+  if (Qk<=0) r.why="Não é necessária: as paredes já dão conta da carga.";
+  else {
+    let found=null;
+    for (let n=1;n<=3&&!found;n++) for (const m of COOL) { const c=coolingAt(m,hzi,p.tu); if (c*n>=Qk) { found={m,n,c}; break; } }
+    if (found) { r.ok=true; r.cool=found; r.prod=`${found.n>1?found.n+" × ":""}SK ${found.m.sk}`; r.why=`Potência exigida de ${fmt(Qk)} W, com ${fmt(found.c*found.n)} W disponíveis a ${fmt(p.tu)} °C de ambiente e ${p.hz} Hz. Alimentação ${found.m.v}, ${found.m.ref}.`; }
+    else r.why=`A potência exigida de ${fmt(Qk)} W passa de 3 unidades do maior modelo. Consulte a Rittal sobre soluções de teto ou a linha Blue e+.`;
+  }
+  rungs.push(r);
+
+  const pick = rungs.find(x=>x.ok)||null;
+  const warns=[], tips=[];
+  if (p.ti>50) warns.push("Ti acima de 50 °C ultrapassa o limite sem redução de corrente dos inversores desta lista.");
+  else if (p.ti>40 && lines.some(l=>l.d&&l.d.ext!==null)) warns.push("PowerFlex 750: 50 °C sem redução vale para as Frames 2 a 7 abertas (IP20/IP00). Com kit Type 1 ou na Frame 8 o limite é 40 °C. Ajuste Ti se for o seu caso.");
+  if (p.tu>35 && pick && pick.id==="cool") warns.push("Ambiente acima de 35 °C: a capacidade foi reduzida por interpolação entre L35 L35 e L35 L50. Confira na curva da unidade.");
+  if (p.tu>50) warns.push("Ambiente acima de 50 °C está fora da faixa dos dados L35 L50 usados aqui.");
+  if (p.ti<35 && pick && pick.id==="cool") warns.push("Ti abaixo de 35 °C: a capacidade real da unidade é menor que a nominal L35. Consulte a curva.");
+  if (pick && pick.cool && pick.cool.m.eol) warns.push("O SK 3332.540 usa R134a e a Rittal informa disponibilidade até 31/12/2026. Avalie a linha Blue e+.");
+  if (lines.some(l=>l.load<100)) warns.push("Há inversor com carga abaixo de 100%. As perdas dessa linha são uma estimativa.");
+  if (lines.some(l=>!l.d&&!(+l.manualW>0))) warns.push("Há inversor sem perdas: informe o valor em W do manual na linha marcada como Outro.");
+  if (savable>0 && pick && pick.id!=="nat") tips.push(`Montagem em flange tira ${fmt(savable)} W do interior do painel (Frames 2 a 7). Marque a opção na linha do inversor para comparar.`);
+  return {lines,driveW,Qv,Qd,A,dT,Qs,f,V,rungs,pick,warns,tips,hzi,savable};
+}
+</script>
+
+<script>
+/* ---------- Interface ---------- */
+const $ = id => document.getElementById(id);
+const FIELDS = ["other","w","h","d","inst","k","tu","ti","alt","hz","margin","filters","env"];
+const DEFAULT = { drives:[
+  {model:"PowerFlex 755",cat:"D077",qty:1,load:100,flange:false,manualW:"",name:""},
+  {model:"PowerFlex 753",cat:"D011",qty:1,load:100,flange:false,manualW:"",name:""},
+  {model:"PowerFlex 525",cat:"D017N114",qty:2,load:100,flange:false,manualW:"",name:""},
+] };
+let state = {drives:[]};
+const KEY = "balanco-termico-v1";
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(KEY); if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (e) { return null; }
+}
+function save() {
+  try {
+    const f={}; FIELDS.forEach(k=>f[k]=$(k).value);
+    localStorage.setItem(KEY, JSON.stringify({drives:state.drives, fields:f}));
+  } catch (e) {}
+}
+
+function fillSelect(sel, items, value) {
+  sel.textContent="";
+  items.forEach(([v,t])=>{ const o=document.createElement("option"); o.value=v; o.textContent=t; sel.appendChild(o); });
+  sel.value=value;
+}
+function drawDrives() {
+  const box=$("drives"); box.textContent="";
+  state.drives.forEach((l,i)=>{
+    const row=document.createElement("div"); row.className="drive";
+    const known=l.model!=="Outro";
+    row.innerHTML=`
+      <div class="drive-sel">
+        <label for="model${i}">Modelo<select id="model${i}"></select></label>
+        ${known?`<label for="grp${i}">Rede<select id="grp${i}"></select></label>
+        <label class="wide" for="key${i}">Potência e corrente<select id="key${i}"></select></label>`
+        :`<label for="name${i}">Nome do inversor<input id="name${i}" autocomplete="off"></label>
+        <label class="wide" for="mw${i}">Perda por inversor, do manual (W)<input id="mw${i}" type="number" min="0" step="1"></label>`}
+      </div>
+      <div class="drive-top">
+        <label for="qty${i}">Qtd.<input id="qty${i}" type="number" min="1" step="1"></label>
+        <label for="load${i}">Carga %<input id="load${i}" type="number" min="0" max="100" step="5"></label>
+        <label id="mount${i}" for="fl${i}" class="mount">Montagem<select id="fl${i}"><option value="0">Dentro do painel</option><option value="1">Em flange, dissipador para fora</option></select></label>
+        <button type="button" class="rm" aria-label="Remover inversor">Remover</button>
+      </div>
+      <div class="drive-info" id="info${i}"></div>`;
+    box.appendChild(row);
+    const q=id=>row.querySelector("#"+id+i);
+    const qty=q("qty"), load=q("load"), model=q("model"), fl=q("fl");
+    qty.value=l.qty; load.value=l.load; fl.value=l.flange?"1":"0";
+    fillSelect(model, MODELS.map(m=>[m,m==="Outro"?"Outro inversor":m]), l.model);
+    qty.addEventListener("input",()=>{l.qty=Math.max(0,+qty.value||0); update();});
+    load.addEventListener("input",()=>{l.load=+load.value; update();});
+    fl.addEventListener("input",()=>{l.flange=fl.value==="1"; update();});
+    model.addEventListener("input",()=>{
+      l.model=model.value; l.flange=false;
+      const opts=optionsFor(l.model);
+      if (l.model==="Outro") l.cat="";
+      else if (!opts.some(o=>o.key===l.cat)) l.cat=opts[0].key;
+      drawDrives(); update();
+    });
+    row.querySelector(".rm").addEventListener("click",()=>{state.drives.splice(i,1); drawDrives(); update();});
+    if (known) {
+      const grp=q("grp"), key=q("key"), opts=optionsFor(l.model);
+      const groups=[...new Set(opts.map(o=>o.grp))];
+      const cur=CATALOG.get(l.cat);
+      fillSelect(grp, groups.map(g=>[g,g]), cur.grp);
+      fillSelect(key, opts.filter(o=>o.grp===cur.grp).map(o=>[o.key,`${o.key} · ${o.rating} · ${fmt(o.total)} W`]), l.cat);
+      grp.addEventListener("input",()=>{ l.cat=opts.find(o=>o.grp===grp.value).key; l.flange=false; drawDrives(); update(); });
+      key.addEventListener("input",()=>{ l.cat=key.value; l.flange=false; drawDrives(); update(); });
+    } else {
+      const name=q("name"), mw=q("mw");
+      name.value=l.name||""; mw.value=l.manualW;
+      name.addEventListener("input",()=>{l.name=name.value; update();});
+      mw.addEventListener("input",()=>{l.manualW=mw.value; update();});
+    }
+    const d=known?CATALOG.get(l.cat):null, info=$("info"+i);
+    $("mount"+i).hidden=!(d&&d.flange);
+    if (d) {
+      const split = d.ext!==null ? ` (${fmt(d.ext)} W externos + ${fmt(d.int)} W internos)` : "";
+      info.innerHTML=`<span>${PREFIX[l.model]}${d.key}</span><span class="w">${fmt(d.total)} W${split}</span>`;
+    } else info.innerHTML=`<span class="note">Use para PowerFlex 40, 70, 700, 755T, 750 em 600/690 V e outros.</span>`;
+  });
+}
+function addByCode() {
+  const inp=$("code"), msg=$("codemsg"), d=findDrive(inp.value);
+  if (!d) { msg.textContent=inp.value.trim()?"Código fora da tabela. Adicione o inversor como Outro e informe as perdas do manual.":"Digite um código, como 20F11ND077 ou 25B-D017N114."; return; }
+  const model=modelFromCode(inp.value,d);
+  state.drives.push({model,cat:d.key,qty:1,load:100,flange:false,manualW:"",name:""});
+  msg.textContent=`${model} ${d.key} adicionado.`; inp.value="";
+  drawDrives(); update();
+}
+function params() {
+  const n=id=>+$(id).value||0;
+  return {drives:state.drives.map(l=>({...l,qty:+l.qty||0,load:Number.isFinite(+l.load)?+l.load:100})),
+    other:n("other"),w:n("w"),h:n("h"),d:n("d"),inst:$("inst").value,k:n("k"),tu:n("tu"),ti:n("ti"),alt:n("alt"),hz:n("hz"),margin:n("margin"),filters:n("filters"),env:$("env").value};
+}
+function esc(s){ const e=document.createElement("span"); e.textContent=s; return e.innerHTML; }
+
+function update() {
+  const p=params(), r=compute(p);
+  const v=$("verdict");
+  if (r.pick) {
+    v.className="verdict";
+    v.innerHTML=`<span class="eyebrow">Solução recomendada</span><div class="vtitle">${esc(r.pick.t)}</div><div style="font-weight:600">${esc(r.pick.prod)}</div><p>${esc(r.pick.why)}</p>`;
+  } else {
+    v.className="verdict fail";
+    v.innerHTML=`<span class="eyebrow">Sem solução nesta faixa</span><div class="vtitle">Nenhum produto da lista atende</div><p>Revise Ti, a montagem dos inversores ou divida a carga em mais de um gabinete, e consulte a Rittal.</p>`;
+  }
+  $("nums").innerHTML=[
+    [fmt(r.Qd)+" W",`Carga térmica, com ${fmt(p.margin)}% de margem`],
+    [fmt(r.A,2)+" m²","Área efetiva IEC 60890"],
+    [fmt(r.dT,1)+" K","ΔT = Ti − Tu"],
+    [fmt(r.Qs)+" W",r.Qs>=0?"Dissipado pelas paredes":"Ganho pelas paredes"],
+  ].map(([b,s])=>`<div class="num"><b>${b}</b><span>${s}</span></div>`).join("");
+  $("alerts").innerHTML=r.warns.map(w=>`<div class="alert warn">${esc(w)}</div>`).join("")+r.tips.map(w=>`<div class="alert tip">${esc(w)}</div>`).join("");
+  $("ladder").innerHTML=r.rungs.map(x=>{
+    const pick=r.pick&&x.id===r.pick.id;
+    const chip=pick?`<span class="chip pick">Recomendada</span>`:x.ok?`<span class="chip ok">Também atende</span>`:`<span class="chip no">Não atende</span>`;
+    return `<li class="rung${pick?" pick":""}"><h3>${esc(x.t)}</h3>${chip}${x.ok?`<p class="prod">${esc(x.prod)}</p>`:""}<p>${esc(x.why)}</p></li>`;
+  }).join("");
+  $("memo").textContent=memo(p,r);
+  save();
+}
+function memo(p,r) {
+  const L=[];
+  L.push("PERDAS");
+  r.lines.forEach(l=>{
+    const name=l.d?`${l.model} ${PREFIX[l.model]}${l.d.key}`:(l.name||"Inversor sem nome");
+    const fl=l.flange&&l.d&&l.d.flange?", flange (só W internos)":"";
+    const lo=l.load<100?`, carga ${fmt(l.load)}% (estimativa)`:"";
+    L.push(`  ${l.qty} × ${name}${fl}${lo}: ${fmt(l.w,1)} W`);
+  });
+  L.push(`  Outras perdas: ${fmt(p.other,1)} W`);
+  L.push(`  Qv = ${fmt(r.Qv,1)} W`);
+  L.push(`  Com margem de ${fmt(p.margin)}%: Qd = ${fmt(r.Qd,1)} W`);
+  L.push("");
+  L.push("GABINETE");
+  L.push(`  ${fmt(p.w)} × ${fmt(p.h)} × ${fmt(p.d)} mm, ${$("inst").selectedOptions[0].text}`);
+  L.push(`  A = ${fmt(r.A,2)} m²; k = ${fmt(p.k,1)} W/m²K`);
+  L.push("");
+  L.push("BALANÇO");
+  L.push(`  ΔT = Ti − Tu = ${fmt(p.ti,1)} − ${fmt(p.tu,1)} = ${fmt(r.dT,1)} K`);
+  L.push(`  Qs = A · k · ΔT = ${fmt(r.A,2)} · ${fmt(p.k,1)} · ${fmt(r.dT,1)} = ${fmt(r.Qs,1)} W`);
+  if (r.dT>0) {
+    L.push(`  Ventilador: f = ${fmt(r.f,2)} (3,1 ao nível do mar, corrigido para ${fmt(p.alt)} m)`);
+    L.push(`  V = f · Qd / ΔT = ${fmt(r.V,1)} m³/h (a favor da segurança, sem descontar as paredes)`);
+    const h=r.rungs.find(x=>x.id==="hex");
+    if (h.qw>0) L.push(`  Trocador: qw = (Qd − Qs) / ΔT = ${fmt(h.qw,1)} W/K`);
+  }
+  const c=r.rungs.find(x=>x.id==="cool");
+  L.push(`  Refrigeração: Qk = Qd − Qs = ${fmt(c.qk,1)} W`);
+  L.push("");
+  L.push("RESULTADO");
+  L.push(r.pick?`  ${r.pick.t}: ${r.pick.prod}`:"  Nenhum produto da lista atende");
+  if (r.pick&&r.pick.fan) L.push("  Ventilador embaixo, soprando para dentro; filtro de saída no alto da mesma lateral ou na oposta.");
+  return L.join("\n");
+}
+
+function buildData() {
+  let h=`<table><thead><tr><th>Código</th><th>Rede</th><th class="n">A</th><th class="n">Externos</th><th class="n">Internos</th><th class="n">Total</th></tr></thead><tbody>`;
+  PF520_GROUPS.forEach(([g,rows])=>rows.forEach(([c,kw,a,w])=>{h+=`<tr><td>25A/25B-${c}</td><td>${g}</td><td class="n">${fmt(a,1)}</td><td class="n">–</td><td class="n">–</td><td class="n">${fmt(w)}</td></tr>`;}));
+  PF750_400.forEach(([c,k,a,e,i,t])=>{h+=`<tr><td>20F/20G…${c}</td><td>400 V 3~</td><td class="n">${fmt(a,1)}</td><td class="n">${fmt(e)}</td><td class="n">${fmt(i)}</td><td class="n">${fmt(t)}</td></tr>`;});
+  PF750_480.forEach(([c,k,a,e,i,t])=>{h+=`<tr><td>20F/20G…${c}</td><td>480 V 3~</td><td class="n">${fmt(a,1)}</td><td class="n">${fmt(e)}</td><td class="n">${fmt(i)}</td><td class="n">${fmt(t)}</td></tr>`;});
+  $("t-drives").innerHTML=h+"</tbody></table>";
+  const pair=a=>`${fmt(a[0],2)} / ${fmt(a[1],2)}`;
+  let t=`<h3>Ventiladores com filtro, 230 V (m³/h em 50 / 60 Hz)</h3><table><thead><tr><th>Modelo</th><th>Filtro de saída</th><th class="n">Livre</th><th class="n">1 filtro</th><th class="n">2 filtros</th><th>Recorte (mm)</th></tr></thead><tbody>`;
+  FANS.forEach(m=>{t+=`<tr><td>SK ${m.sk}</td><td>SK ${m.filter}</td><td class="n">${pair(m.free)}</td><td class="n">${pair(m.f1)}</td><td class="n">${pair(m.f2)}</td><td>${m.cut}</td></tr>`;});
+  t+=`</tbody></table><h3 style="margin-top:14px">Trocadores de calor ar/ar, 230 V</h3><table><thead><tr><th>Modelo</th><th class="n">W/K</th><th>L × A × P (mm)</th></tr></thead><tbody>`;
+  HEX.forEach(m=>{t+=`<tr><td>SK ${m.sk}</td><td class="n">${m.qw}</td><td>${m.dim}</td></tr>`;});
+  t+=`</tbody></table><h3 style="margin-top:14px">Unidades de refrigeração Blue e (kW em 50 / 60 Hz)</h3><table><thead><tr><th>Modelo</th><th class="n">L35 L35</th><th class="n">L35 L50</th><th>Alimentação</th><th>L × A × P (mm)</th><th>Fluido</th></tr></thead><tbody>`;
+  COOL.forEach(m=>{t+=`<tr><td>SK ${m.sk}</td><td class="n">${pair(m.l35)}</td><td class="n">${pair(m.l50)}</td><td>${m.v}</td><td>${m.dim}</td><td>${m.ref}</td></tr>`;});
+  $("t-rittal").innerHTML=t+"</tbody></table>";
+}
+
+$("add").addEventListener("click",()=>{state.drives.push({model:"PowerFlex 755",cat:"D2P1",qty:1,load:100,flange:false,manualW:"",name:""}); drawDrives(); update();});
+$("addcode").addEventListener("click",addByCode);
+$("code").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); addByCode(); } });
+$("copy").addEventListener("click",async()=>{
+  const b=$("copy");
+  try { await navigator.clipboard.writeText($("memo").textContent); b.textContent="Memorial copiado"; }
+  catch(e) { const s=getSelection(), rg=document.createRange(); rg.selectNodeContents($("memo")); s.removeAllRanges(); s.addRange(rg); b.textContent="Texto selecionado: use Ctrl+C"; }
+  setTimeout(()=>{b.textContent="Copiar memorial";},2500);
+});
+FIELDS.forEach(id=>$(id).addEventListener("input",update));
+
+const saved=loadSaved();
+if (saved&&Array.isArray(saved.drives)) {
+  // Projetos salvos na versão anterior guardam só o código digitado.
+  state.drives=saved.drives.map(l=>{
+    if (l.model) return l;
+    const d=findDrive(l.cat);
+    return d ? {...l,model:modelFromCode(l.cat,d),cat:d.key} : {...l,model:"Outro",name:l.cat,cat:""};
+  });
+  if (saved.fields) FIELDS.forEach(k=>{ if (saved.fields[k]!==undefined) $(k).value=saved.fields[k]; });
+} else state.drives=DEFAULT.drives.map(d=>({...d}));
+buildData(); drawDrives(); update();
+</script>
+</body>
+</html>
