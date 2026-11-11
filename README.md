@@ -1,9 +1,10 @@
-# Balanço Térmico de Painel e Dimensionamento de Cabos
+# Balanço Térmico, Dimensionamento de Cabos e Energia Incidente
 
-O site tem duas ferramentas, com abas no topo para alternar entre elas:
+O site tem três ferramentas, com abas no topo para alternar entre elas:
 
 - **Balanço térmico** (`index.html`): perdas de inversores e climatização do painel.
 - **Dimensionamento de cabos** (`cabos.html`): seção de cabos de baixa tensão pela NBR 5410, em CA ou CC.
+- **Energia incidente** (`energia.html`): arco elétrico pela IEEE 1584-2018, com relatório em PDF.
 
 ## Balanço térmico
 
@@ -69,3 +70,13 @@ Limites conhecidos:
 - Curto-circuito (I²t) não é verificado.
 
 Projeto independente, sem vínculo com a Rockwell Automation ou a Rittal.
+
+## Energia incidente
+
+Abra `energia.html` (ou a aba "Energia incidente") e informe a identificação do relatório, a tensão, o curto-circuito, a configuração dos eletrodos (VCB, VCBB, HCB, VOA ou HOA), as distâncias G e D, os tempos de eliminação do arco e as dimensões do invólucro.
+
+A página segue a IEEE 1584-2018: corrente de arco a 600 V, 2700 V e 14300 V com interpolação, corrente mínima pelo fator de variação, fator de correção do invólucro, energia incidente e limite de aproximação nos dois cenários (Ia com T e Ia mínima com Tmin), valendo o pior. A categoria e o ATPV seguem as faixas da NFPA 70E.
+
+Conferência: com os dados do relatório de exemplo do QTei2018 (VCB, 30 kA, 380 V, G 25 mm, D 457 mm, 100 ms, 2000 × 2000 × 800 mm), a página dá Ia = 19,517 kA e E = 14,979 J/cm² (3,58 cal/cm²), iguais aos do relatório, e AFB = 905,7 mm contra 905,675 mm.
+
+O botão "Gerar PDF" monta o relatório no próprio navegador, com capa, cabeçalho e rodapé da JAV (`img/jav/`), usando a biblioteca jsPDF guardada em `vendor/jspdf/` (licença MIT). Os dados da empresa no rodapé ficam na constante `COMPANY` de `energia.html`. O PDF só é gerado com a página aberta pelo site, e não como arquivo local.

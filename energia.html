@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Calcula a energia incidente e o limite de aproximação do arco elétrico pela IEEE 1584-2018 e gera o relatório em PDF.">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>Energia Incidente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mesma folha de cálculo das outras ferramentas: entradas à esquerda, resultado à direita, memorial e dados abaixo. */
+:root {
+  --bg: #e9eaea; --panel: #f6f6f5; --field: #ffffff; --line: #c6c8c8; --line-strong: #8f9393;
+  --fg: #20262a; --muted: #586066; --accent: #0b5a8a; --accent-fg: #ffffff; --accent-soft: #d9e7ef;
+  --ok: #1d6b3f; --ok-soft: #dcece2; --warn: #8a5600; --warn-soft: #f5e8cf; --bad: #a12b23; --bad-soft: #f5dfdc;
+  --display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 56px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 4.4vw, 42px); font-weight: 700; line-height: 1.05; }
+h2 { font-size: 21px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.sub { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+.tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line-strong); margin-bottom: 14px; }
+.tabs a { padding: 7px 14px; text-decoration: none; color: var(--muted); font: 600 15px var(--display); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; }
+.tabs a:hover { color: var(--accent); }
+.tabs a[aria-current="page"] { color: var(--fg); background: var(--panel); border-color: var(--line-strong); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.col { display: grid; gap: 22px; min-width: 0; }
+section.sheet { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.head-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.note { color: var(--muted); font-size: 13.5px; }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); min-width: 0; }
+label.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--fg); }
+label.check input { width: auto; }
+input, select { font: 400 15px var(--body); color: var(--fg); background: var(--field); border: 1px solid var(--line-strong); padding: 7px 9px; width: 100%; min-width: 0; border-radius: 2px; }
+input[type=number] { font-family: var(--mono); font-size: 14px; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: 600 14px var(--body); cursor: pointer; border-radius: 2px; padding: 8px 12px; border: 1px solid var(--accent); background: transparent; color: var(--accent); }
+button:hover { background: var(--accent-soft); }
+button.primary { background: var(--accent); color: var(--accent-fg); }
+button.primary:hover { filter: brightness(1.08); background: var(--accent); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: end; }
+.span2 { grid-column: span 2; }
+.fig { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; align-items: center; border: 1px solid var(--line); background: var(--field); padding: 10px 12px; }
+.fig p { font-size: 14px; }
+.fig .ref { font: 600 13px var(--body); color: var(--accent); margin-top: 3px; }
+.fig svg { width: 120px; height: 80px; color: var(--fg); display: block; }
+.verdict { border: 2px solid var(--accent); background: var(--accent-soft); padding: 16px 18px; display: grid; gap: 6px; }
+.verdict.warn { border-color: var(--warn); background: var(--warn-soft); }
+.verdict.fail { border-color: var(--bad); background: var(--bad-soft); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.vtitle { font: 700 clamp(25px, 3.4vw, 33px)/1.1 var(--display); }
+.nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); }
+.num { padding: 10px 12px; border-left: 1px solid var(--line); min-width: 0; }
+.num:first-child { border-left: 0; }
+.num b { display: block; font: 500 21px/1.2 var(--mono); }
+.num span { font-size: 12.5px; color: var(--muted); }
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; }
+.rung { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 11px 12px; border: 1px solid var(--line); border-top-width: 0; }
+.rung:first-child { border-top-width: 1px; }
+.rung.pick { background: var(--accent-soft); border-color: var(--accent); border-top-width: 1px; }
+.rung p { grid-column: 1 / -1; font-size: 14px; }
+.rung .prod { font-weight: 600; }
+.chip { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 2px; align-self: start; white-space: nowrap; }
+.chip.pick { background: var(--accent); color: var(--accent-fg); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.alert { font-size: 14px; padding: 8px 11px; }
+.alert.warn { background: var(--warn-soft); color: var(--warn); }
+.alert.bad { background: var(--bad-soft); color: var(--bad); }
+.alert.tip { background: var(--ok-soft); color: var(--ok); }
+.alerts { display: grid; gap: 6px; }
+.pdf-row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+pre.memo { margin: 0; font: 400 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--field); border: 1px solid var(--line); padding: 12px; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font: 600 16px var(--display); }
+.tw { overflow-x: auto; margin-top: 10px; }
+.tw h3 { margin: 14px 0 4px; }
+.tw h3:first-child { margin-top: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); }
+td.n, th.n { text-align: right; font-family: var(--mono); font-size: 13px; }
+td.wrapt { white-space: normal; min-width: 220px; }
+tr.sel td { background: var(--accent-soft); }
+ul.src { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; }
+a { color: var(--accent); }
+@media (max-width: 940px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .wrap { padding: 20px 16px 40px; }
+  .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .num:nth-child(3) { border-left: 0; }
+  .num:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .span2 { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <nav class="tabs" aria-label="Ferramentas">
+      <a href="index.html">Balanço térmico</a>
+      <a href="cabos.html">Dimensionamento de cabos</a>
+      <a href="energia.html" aria-current="page">Energia incidente</a>
+    </nav>
+    <h1>Energia Incidente</h1>
+    <p class="sub">Calcula a corrente de arco, a energia incidente e o limite de aproximação do arco elétrico pela IEEE 1584-2018, classifica o risco e a vestimenta, e gera o relatório em PDF com a identidade da JAV. O caso abaixo é um exemplo: troque pelos seus dados.</p>
+  </header>
+
+  <div class="layout">
+    <div class="col">
+      <section class="sheet" aria-labelledby="h-id">
+        <h2 id="h-id">1. Identificação</h2>
+        <div class="grid2">
+          <label for="cli">Cliente<input id="cli" autocomplete="off" value="Cliente exemplo"></label>
+          <label for="prj">Projeto<input id="prj" autocomplete="off" value="PJ04961-01"></label>
+          <label for="uni">Unidade<input id="uni" autocomplete="off" value="Indaiatuba/SP"></label>
+          <label for="tag">Equipamento ou TAG<input id="tag" autocomplete="off" placeholder="QGBT-01"></label>
+          <label for="author">Elaborado por<input id="author" autocomplete="off" placeholder="Nome do responsável"></label>
+          <div class="grid2" style="gap:12px">
+            <label for="rev">Revisão<input id="rev" autocomplete="off" value="00"></label>
+            <label for="date">Data<input id="date" type="date"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-sys">
+        <h2 id="h-sys">2. Sistema e equipamento</h2>
+        <div class="grid3">
+          <label for="v">Tensão do sistema Voc (V)<input id="v" type="number" min="208" max="15000" step="1" value="380"></label>
+          <label for="ibf">Curto-circuito Ibf (kA)<input id="ibf" type="number" min="0.2" max="106" step="0.1" value="30"></label>
+          <label for="hz">Frequência
+            <select id="hz"><option value="60" selected>60 Hz</option><option value="50">50 Hz</option></select>
+          </label>
+        </div>
+        <label for="equip">Tipo de equipamento (preenche G e D com os valores típicos da IEEE 1584)
+          <select id="equip">
+            <option value="">Escolha para preencher G e D</option>
+            <option value="lvpanel">Quadro de distribuição ou CCM de baixa tensão: G 25 mm, D 457,2 mm</option>
+            <option value="lvswgr">Painel de manobra (switchgear) de baixa tensão: G 32 mm, D 609,6 mm</option>
+            <option value="cable">Caixa de junção de cabos: G 13 mm, D 457,2 mm</option>
+            <option value="mv5">Painel de manobra ou CCM de 5 kV: G 104 mm, D 914,4 mm</option>
+            <option value="mv15">Painel de manobra ou CCM de 15 kV: G 152 mm, D 914,4 mm</option>
+          </select>
+        </label>
+        <label for="cfg">Configuração dos eletrodos
+          <select id="cfg">
+            <option value="VCB" selected>VCB: verticais dentro de invólucro</option>
+            <option value="VCBB">VCBB: verticais em invólucro, terminando em barreira isolante</option>
+            <option value="HCB">HCB: horizontais dentro de invólucro</option>
+            <option value="VOA">VOA: verticais ao ar livre</option>
+            <option value="HOA">HOA: horizontais ao ar livre</option>
+          </select>
+        </label>
+        <div class="fig" id="cfg-fig"></div>
+        <div class="grid2">
+          <label for="g">Distância entre condutores G (mm)<input id="g" type="number" min="6" step="1" value="25"></label>
+          <label for="d">Distância de trabalho D (mm)<input id="d" type="number" min="305" step="1" value="457"></label>
+        </div>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-prot">
+        <h2 id="h-prot">3. Tempo de eliminação do arco</h2>
+        <div class="grid2">
+          <label for="t">T: tempo para a corrente de arco Ia (ms)<input id="t" type="number" min="1" step="1" value="100"></label>
+          <label for="tmin">Tmin: tempo para a corrente de arco mínima (ms)<input id="tmin" type="number" min="1" step="1" value="100"></label>
+        </div>
+        <p class="note">Leia os dois tempos na curva da proteção a montante. A corrente mínima de arco é menor, e a proteção pode demorar mais para atuar: por isso a norma pede o cálculo nos dois cenários e vale o pior.</p>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-enc" id="enc-sec">
+        <h2 id="h-enc">4. Dimensões do invólucro</h2>
+        <div class="grid3">
+          <label for="ew">Largura L (mm)<input id="ew" type="number" min="1" step="1" value="2000"></label>
+          <label for="eh">Altura A (mm)<input id="eh" type="number" min="1" step="1" value="2000"></label>
+          <label for="ed">Profundidade P (mm)<input id="ed" type="number" min="1" step="1" value="800"></label>
+        </div>
+        <p class="note">Use as dimensões do compartimento onde o arco pode ocorrer. A IEEE 1584 limita largura e altura a 1244,6 mm no fator de correção: acima disso, a página usa esse valor.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <div class="nums" id="nums"></div>
+      <div class="alerts" id="alerts"></div>
+      <section class="sheet" aria-labelledby="h-pdf">
+        <h2 id="h-pdf">Relatório em PDF</h2>
+        <div class="pdf-row">
+          <button type="button" class="primary" id="pdf">Gerar PDF</button>
+          <label class="check" for="cover"><input id="cover" type="checkbox" checked> Incluir capa</label>
+        </div>
+        <p class="note" id="pdfmsg" aria-live="polite">O relatório sai com o cabeçalho, o rodapé e a capa da JAV, os dados informados, os resultados e a classificação de risco.</p>
+      </section>
+      <section class="sheet" aria-labelledby="h-cen">
+        <h2 id="h-cen">Cenários avaliados</h2>
+        <p class="note">A energia incidente e o limite de aproximação valem para o pior dos dois cenários.</p>
+        <ol class="ladder" id="ladder"></ol>
+      </section>
+      <section class="sheet" aria-labelledby="h-mem">
+        <div class="head-row">
+          <h2 id="h-mem">Memorial de cálculo</h2>
+          <button type="button" id="copy">Copiar memorial</button>
+        </div>
+        <pre class="memo" id="memo"></pre>
+      </section>
+    </div>
+  </div>
+
+  <section class="sheet" aria-labelledby="h-dados">
+    <h2 id="h-dados">Dados e limites</h2>
+    <details>
+      <summary>Categorias de vestimenta</summary>
+      <div class="tw" id="t-cat"></div>
+    </details>
+    <details>
+      <summary>Faixa de validade da IEEE 1584-2018</summary>
+      <div class="tw" id="t-range"></div>
+    </details>
+    <details>
+      <summary>Coeficientes usados</summary>
+      <div class="tw" id="t-coef"></div>
+    </details>
+    <details open>
+      <summary>O que conferir antes de emitir</summary>
+      <ul class="src" style="margin-top:10px">
+        <li>As equações e os coeficientes são os da IEEE 1584-2018: corrente de arco (Tabela 1), fator de variação (Tabela 2), energia e limite de aproximação (Tabelas 3 a 5) e fator de correção do invólucro (Tabelas 6 a 8). Com os dados do relatório de exemplo da Q&T (VCB, 30 kA, 380 V, G 25 mm, D 457 mm, 100 ms, 2000 × 2000 × 800 mm), a página dá Ia = 19,517 kA e E = 14,979 J/cm², iguais aos do relatório, e AFB = 905,7 mm, contra 905,675 mm, diferença de 0,004%.</li>
+        <li>A categoria e o ATPV seguem as faixas de vestimenta da NFPA 70E: categoria 1 até 4 cal/cm², 2 até 8, 3 até 25 e 4 até 40. Os nomes de risco (mínimo, leve, moderado, alto, severo, extremo) são critério desta ferramenta. "Leve" para a categoria 1 coincide com o relatório da Q&T.</li>
+        <li>Abaixo de 1,2 cal/cm² não há risco de queimadura de segundo grau, mas a vestimenta e o EPI de choque continuam valendo. Acima de 40 cal/cm², a página indica que o trabalho energizado não deve ser feito.</li>
+        <li>Os tempos T e Tmin vêm do estudo de seletividade. A norma admite limitar o tempo a 2 s quando a pessoa consegue se afastar do arco. A página não aplica esse limite sozinha: avisa quando o tempo passa de 2 s.</li>
+        <li>Fora da faixa de validade da norma, a página calcula, mas marca o resultado como fora do modelo. Acima de 15 kV ou abaixo de 208 V ela não calcula.</li>
+        <li>O PDF é gerado no próprio navegador, com a biblioteca jsPDF guardada no site. Nada é enviado a servidor.</li>
+        <li>Ferramenta de apoio. O estudo de energia incidente e a etiqueta do equipamento continuam sendo responsabilidade do profissional habilitado.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Fontes</summary>
+      <ul class="src" style="margin-top:10px">
+        <li>IEEE Std 1584-2018, IEEE Guide for Performing Arc-Flash Hazard Calculations.</li>
+        <li>NFPA 70E, Standard for Electrical Safety in the Workplace: categorias de EPI para arco elétrico.</li>
+        <li>NR-10, Segurança em Instalações e Serviços em Eletricidade.</li>
+        <li>Relatório de referência gerado no software QTei2018, usado para conferir os resultados.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script src="vendor/jspdf/jspdf.umd.min.js" defer></script>
+<script id="engine">
+/* ---------- IEEE 1584-2018 ---------- */
+const CFGS = {
+  VCB:{t:"Verticais dentro de invólucro", box:true},
+  VCBB:{t:"Verticais em invólucro, terminando em barreira isolante", box:true},
+  HCB:{t:"Horizontais dentro de invólucro", box:true},
+  VOA:{t:"Verticais ao ar livre", box:false},
+  HOA:{t:"Horizontais ao ar livre", box:false},
+};
+const VOCS = [0.6, 2.7, 14.3];
+// Tabela 1: corrente de arco a 600 V, 2700 V e 14300 V. k1 a k10.
+const K_IARC = {
+  VCB:[[-0.04287,1.035,-0.083,0,0,-4.783e-9,1.962e-6,-0.000229,0.003141,1.092],[0.0065,1.001,-0.024,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729],[0.005795,1.015,-0.011,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729]],
+  VCBB:[[-0.017432,0.98,-0.05,0,0,-5.767e-9,2.524e-6,-0.00034,0.01187,1.013],[0.002823,0.995,-0.0125,0,-9.204e-11,2.901e-8,-3.262e-6,0.0001569,-0.004003,0.9825],[0.014827,1.01,-0.01,0,-9.204e-11,2.901e-8,-3.262e-6,0.0001569,-0.004003,0.9825]],
+  HCB:[[0.054922,0.988,-0.11,0,0,-5.382e-9,2.316e-6,-0.000302,0.0091,0.9725],[0.001011,1.003,-0.0249,0,0,4.859e-10,-1.814e-7,-9.128e-6,-0.0007,0.9881],[0.008693,0.999,-0.02,0,-5.043e-11,2.233e-8,-3.046e-6,0.000116,-0.001145,0.9839]],
+  VOA:[[0.043785,1.04,-0.18,0,0,-4.783e-9,1.962e-6,-0.000229,0.003141,1.092],[-0.02395,1.006,-0.0188,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729],[0.005371,1.0102,-0.029,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729]],
+  HOA:[[0.111147,1.008,-0.24,0,0,-3.895e-9,1.641e-6,-0.000197,0.002615,1.1],[0.000435,1.006,-0.038,0,0,7.859e-10,-1.914e-7,-9.128e-6,-0.0007,0.9981],[0.000904,0.999,-0.02,0,0,7.859e-10,-1.914e-7,-9.128e-6,-0.0007,0.9981]],
+};
+// Tabela 2: fator de variação da corrente de arco. k1 a k7.
+const K_VAR = {
+  VCB:[0,-1.4269e-6,8.3137e-5,-0.0019382,0.022366,-0.12645,0.30226],
+  VCBB:[1.138e-6,-6.0287e-5,0.0012758,-0.013778,0.080217,-0.24066,0.33524],
+  HCB:[0,-3.097e-6,0.00016405,-0.0033609,0.033308,-0.16182,0.34627],
+  VOA:[9.5606e-7,-5.1543e-5,0.0011161,-0.01242,0.075125,-0.23584,0.33696],
+  HOA:[0,-3.1555e-6,0.0001682,-0.0034607,0.034124,-0.1599,0.34629],
+};
+// Tabelas 3, 4 e 5: energia incidente e limite de aproximação a 600 V, 2700 V e 14300 V. k1 a k13.
+const K_E = {
+  VCB:[[0.753364,0.566,1.752636,0,0,-4.783e-9,1.962e-6,-0.000229,0.003141,1.092,0,-1.598,0.957],[2.40021,0.165,0.354202,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729,0,-1.569,0.9778],[3.825917,0.11,-0.999749,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729,0,-1.568,0.99]],
+  VCBB:[[3.068459,0.26,-0.098107,0,0,-5.767e-9,2.524e-6,-0.00034,0.01187,1.013,-0.06,-1.809,1.19],[3.870592,0.185,-0.736618,0,-9.204e-11,2.901e-8,-3.262e-6,0.0001569,-0.004003,0.9825,0,-1.742,1.09],[3.644309,0.215,-0.585522,0,-9.204e-11,2.901e-8,-3.262e-6,0.0001569,-0.004003,0.9825,0,-1.677,1.06]],
+  HCB:[[4.073745,0.344,-0.370259,0,0,-5.382e-9,2.316e-6,-0.000302,0.0091,0.9725,0,-2.03,1.036],[3.486391,0.177,-0.193101,0,0,4.859e-10,-1.814e-7,-9.128e-6,-0.0007,0.9881,0.027,-1.723,1.055],[3.044516,0.125,0.245106,0,-5.043e-11,2.233e-8,-3.046e-6,0.000116,-0.001145,0.9839,0,-1.655,1.084]],
+  VOA:[[0.679294,0.746,1.222636,0,0,-4.783e-9,1.962e-6,-0.000229,0.003141,1.092,0,-1.598,0.997],[3.880724,0.105,-1.906033,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729,0,-1.515,1.115],[3.405454,0.12,-0.93245,-1.557e-12,4.556e-10,-4.186e-8,8.346e-7,5.482e-5,-0.003191,0.9729,0,-1.534,0.979]],
+  HOA:[[3.470417,0.465,-0.261863,0,0,-3.895e-9,1.641e-6,-0.000197,0.002615,1.1,0,-1.99,1.04],[3.616266,0.149,-0.761561,0,0,7.859e-10,-1.914e-7,-9.128e-6,-0.0007,0.9981,0,-1.639,1.078],[2.04049,0.177,1.005092,0,0,7.859e-10,-1.914e-7,-9.128e-6,-0.0007,0.9981,-0.05,-1.633,1.151]],
+};
+// Tabela 7: constantes A e B da largura e altura equivalentes. Tabela 8: coeficientes b1, b2 e b3 do fator de correção.
+const K_AB = { VCB:[4,20], VCBB:[10,24], HCB:[10,22] };
+const K_CF = {
+  typical:{ VCB:[-0.000302,0.03441,0.4325], VCBB:[-0.0002976,0.032,0.479], HCB:[-0.0001923,0.01935,0.6899] },
+  shallow:{ VCB:[0.002222,-0.02556,0.6222], VCBB:[-0.002778,0.1194,-0.2778], HCB:[-0.0005556,0.03722,0.4778] },
+};
+// Categorias de vestimenta (NFPA 70E). Limite superior em cal/cm².
+const CATS = [
+  {max:1.2, cat:"0", risk:"Mínimo", atpv:null, ppe:"Roupa de fibra natural ou não derretível, óculos de segurança, protetor auricular e luvas de couro.", tone:"ok"},
+  {max:4, cat:"1", risk:"Leve", atpv:4, ppe:"Camisa e calça ou macacão resistentes ao arco, protetor facial ou balaclava, capacete, óculos, protetor auricular, luvas de couro e calçado de couro.", tone:"ok"},
+  {max:8, cat:"2", risk:"Moderado", atpv:8, ppe:"Camisa e calça ou macacão resistentes ao arco, protetor facial com balaclava ou capuz, capacete, óculos, protetor auricular, luvas de couro e calçado de couro.", tone:"warn"},
+  {max:25, cat:"3", risk:"Alto", atpv:25, ppe:"Conjunto resistente ao arco com capuz, capacete, óculos, protetor auricular, luvas resistentes ao arco e calçado de couro.", tone:"warn"},
+  {max:40, cat:"4", risk:"Severo", atpv:40, ppe:"Conjunto resistente ao arco com capuz, capacete, óculos, protetor auricular, luvas resistentes ao arco e calçado de couro.", tone:"bad"},
+  {max:Infinity, cat:"acima de 4", risk:"Extremo", atpv:null, ppe:"Não existe vestimenta padronizada. Não faça trabalho energizado: desenergize ou reduza a energia (tempo de proteção, modo manutenção, comando remoto).", tone:"bad"},
+];
+const J_PER_CAL = 4.184;
+const lg = Math.log10;
+
+function poly(k, x, from, n) { let s=0; for (let i=0;i<n;i++) s+=k[from+i]*x**(n-1-i); return s; }
+// Equação 1: corrente de arco intermediária.
+function iarcAt(k, I, G) { return 10**(k[0]+k[1]*lg(I)+k[2]*lg(G)) * poly(k,I,3,7); }
+// Denominador comum das Equações 3 a 10 (k4·Ibf^7 + … + k10·Ibf).
+function den(k, I) { let s=0; for (let i=0;i<7;i++) s+=k[3+i]*I**(7-i); return s; }
+// Equações 3 a 6: energia incidente intermediária em J/cm². ia: corrente de arco do nível; ilast: a da parcela k13.
+function energyAt(k, I, G, D, T, ia, ilast, CF) { return 12.552/50*T*10**(k[0]+k[1]*lg(G)+k[2]*ia/den(k,I)+k[10]*lg(I)+k[11]*lg(D)+k[12]*lg(ilast)+lg(1/CF)); }
+// Equações 7 a 10: limite de aproximação intermediário em mm, para 1,2 cal/cm² (5,0 J/cm²).
+function afbAt(k, I, G, T, ia, ilast, CF) { return 10**((k[0]+k[1]*lg(G)+k[2]*ia/den(k,I)+k[10]*lg(I)+k[12]*lg(ilast)+lg(1/CF)-lg(20/T))/(-k[11])); }
+// Equações 16 a 21: interpolação entre os níveis de 600 V, 2700 V e 14300 V.
+function interp(v, x) {
+  const x1=(x[1]-x[0])/2.1*(v-2.7)+x[1];
+  const x2=(x[2]-x[1])/11.6*(v-14.3)+x[2];
+  const x3=x1*(2.7-v)/2.1+x2*(v-0.6)/2.1;
+  return v>2.7 ? x2 : x3;
+}
+// Equação 25: corrente de arco final até 600 V.
+function iarcLow(v, ia600, I) { const r=1/ia600**2-(0.36-v*v)/(0.36*I*I); return r>0 ? 1/Math.sqrt((0.6/v)**2*r) : NaN; }
+// Seção 4.8: fator de correção do invólucro.
+function enclosureCF(cfg, v, W, H, Dp) {
+  if (!CFGS[cfg].box) return {CF:1, open:true};
+  const [A,B]=K_AB[cfg];
+  const shallow = v<0.6 && W<508 && H<508 && Dp<=203.2;
+  const eq = x => (660.4+(Math.min(x,1244.6)-660.4)*((v+A)/B))/25.4;
+  const W1 = W<508 ? (shallow?W/25.4:20) : W<=660.4 ? W/25.4 : eq(W);
+  let H1;
+  if (H<508) H1 = shallow?H/25.4:20;
+  else if (H<=660.4) H1 = H/25.4;
+  else H1 = cfg==="VCB" ? Math.min(H,1244.6)/25.4 : eq(H);
+  const EES=(W1+H1)/2;
+  const b=K_CF[shallow?"shallow":"typical"][cfg];
+  const c=b[0]*EES*EES+b[1]*EES+b[2];
+  return {CF: shallow?1/c:c, EES, W1, H1, shallow, open:false};
+}
+function category(cal) { return CATS.find(c=>cal<=c.max+1e-9); }
+
+function scenario(p, cf, ia3, ia, T) {
+  const v=p.v/1000, I=p.ibf, G=p.g, D=p.d, k=K_E[p.cfg];
+  let E, AFB;
+  if (v<=0.6) {
+    E = energyAt(k[0],I,G,D,T,ia3[0],ia,cf);
+    AFB = afbAt(k[0],I,G,T,ia3[0],ia,cf);
+  } else {
+    const e=[0,1,2].map(i=>energyAt(k[i],I,G,D,T,ia3[i],ia3[i],cf));
+    const a=[0,1,2].map(i=>afbAt(k[i],I,G,T,ia3[i],ia3[i],cf));
+    E=interp(v,e); AFB=interp(v,a);
+  }
+  return {Ia:ia, T, E, cal:E/J_PER_CAL, AFB};
+}
+
+function compute(p) {
+  const errs=[], warns=[], tips=[];
+  const v=p.v/1000, I=p.ibf, low=v<=0.6;
+  if (!(v>=0.208 && v<=15)) errs.push(`A IEEE 1584-2018 vale de 208 V a 15 kV. Com ${fmt(p.v)} V o modelo não se aplica.`);
+  if (!(I>0)) errs.push("Informe a corrente de curto-circuito.");
+  if (!(p.g>0)) errs.push("Informe a distância entre condutores.");
+  if (!(p.d>0)) errs.push("Informe a distância de trabalho.");
+  if (!(p.t>0) || !(p.tmin>0)) errs.push("Informe os tempos de eliminação do arco.");
+  if (CFGS[p.cfg].box && !(p.ew>0 && p.eh>0 && p.ed>0)) errs.push("Informe as dimensões do invólucro.");
+  if (errs.length) return {p, errs, warns, tips};
+
+  // Faixa de validade (Seção 4.2).
+  const out=[];
+  if (low ? (I<0.5||I>106) : (I<0.2||I>65)) out.push(`Ibf de ${fmt(I,2)} kA fora de ${low?"0,5 a 106 kA":"0,2 a 65 kA"}`);
+  if (low ? (p.g<6.35||p.g>76.2) : (p.g<19.05||p.g>254)) out.push(`G de ${fmt(p.g,1)} mm fora de ${low?"6,35 a 76,2 mm":"19,05 a 254 mm"}`);
+  if (p.d<305) out.push(`D de ${fmt(p.d)} mm abaixo de 305 mm`);
+  if (out.length) warns.push(`Fora da faixa de validade da IEEE 1584-2018: ${out.join("; ")}. O resultado é uma extrapolação do modelo.`);
+  if (CFGS[p.cfg].box) {
+    if (p.ew<4*p.g) warns.push(`A norma pede largura do invólucro de pelo menos 4 vezes G (${fmt(4*p.g)} mm).`);
+    if (p.ew>1244.6 || p.eh>1244.6) tips.push("Largura ou altura acima de 1244,6 mm: o fator de correção usa 1244,6 mm, como manda a Tabela 6.");
+    if (p.ew*p.eh/1e6>1.549) tips.push("A abertura do invólucro passa de 1,549 m², o maior tamanho ensaiado. Prefira as dimensões do compartimento onde o arco ocorre.");
+  }
+  if (p.t>2000 || p.tmin>2000) warns.push("Tempo acima de 2 s. A IEEE 1584 admite limitar a 2 s quando a pessoa consegue se afastar do arco. Avalie se cabe no seu caso.");
+  if (p.v<240) tips.push("Abaixo de 240 V, o arco tende a não se sustentar. A IEEE 1584-2018 calcula a partir de 208 V, mas o resultado é conservador.");
+
+  const ia3=K_IARC[p.cfg].map(k=>iarcAt(k,I,p.g));
+  const Ia = low ? iarcLow(v,ia3[0],I) : interp(v,ia3);
+  if (!Number.isFinite(Ia)) return {p, errs:["A corrente de arco não pôde ser calculada com esses dados. Confira Ibf, G e a tensão."], warns, tips};
+  const kv=K_VAR[p.cfg], VarCf=poly(kv,v,0,7), fmin=1-0.5*VarCf;
+  const cfr=enclosureCF(p.cfg,v,p.ew,p.eh,p.ed);
+  const full=scenario(p,cfr.CF,ia3,Ia,p.t);
+  const min=scenario(p,cfr.CF,ia3.map(x=>x*fmin),Ia*fmin,p.tmin);
+  const worst = min.E>full.E ? "min" : "full";
+  const E=Math.max(full.E,min.E), AFB=Math.max(full.AFB,min.AFB), cal=E/J_PER_CAL;
+  const cat=category(cal);
+  return {p, errs, warns, tips, ia3, Ia, VarCf, fmin, cf:cfr, full, min, worst, E, cal, AFB, cat};
+}
+function fmt(n, d=0) { return Number(n).toLocaleString("pt-BR", {maximumFractionDigits:d, minimumFractionDigits:0}); }
+function fmtF(n, d) { return Number(n).toLocaleString("pt-BR", {maximumFractionDigits:d, minimumFractionDigits:d}); }
+</script>
+
+<script>
+/* ---------- Interface ---------- */
+const $ = id => document.getElementById(id);
+const FIELDS=["cli","prj","uni","tag","author","rev","date","v","ibf","hz","equip","cfg","g","d","t","tmin","ew","eh","ed","cover"];
+const KEY="energia-incidente-v1";
+const EQUIP={ lvpanel:[25,457.2], lvswgr:[32,609.6], cable:[13,457.2], mv5:[104,914.4], mv15:[152,914.4] };
+// Dados da empresa no PDF. Edite aqui se mudarem.
+const COMPANY = {
+  site:"jav.com.br",
+  slogan:"JAV Painéis | Soluções em Montagem de Painéis",
+  footer:["JAV Automação | Distribuição de Materiais Elétricos","CNPJ: 07.783.656/0001-77 – Inscrição Estadual: 122245717","Av. Jerônimo de Albuquerque, 1000 | Angelim | 65060-641 | São Luís-MA","98 3313-8700          jav.com.br"],
+  navy:[43,55,137], blue:[0,173,239],
+};
+function esc(s){ const e=document.createElement("span"); e.textContent=s; return e.innerHTML; }
+
+// Esquemas das configurações: vista lateral, com o invólucro em linha cheia.
+function cfgSvg(cfg) {
+  const box = CFGS[cfg].box ? `<path d="M14 70 V10 H106 V70" fill="none" stroke="currentColor" stroke-width="2"/>` : `<path d="M14 70 V10 H106" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity=".45"/>`;
+  let el="";
+  if (cfg==="VCB"||cfg==="VCBB"||cfg==="VOA") el=[42,60,78].map(x=>`<line x1="${x}" y1="10" x2="${x}" y2="44" stroke="currentColor" stroke-width="4"/>`).join("");
+  else el=[24,38,52].map(y=>`<line x1="14" y1="${y}" x2="62" y2="${y}" stroke="currentColor" stroke-width="4"/>`).join("");
+  const bar = cfg==="VCBB" ? `<rect x="30" y="47" width="60" height="5" fill="#d4892a"/>` : "";
+  const arc = `<path d="M${cfg[0]==="H"?"66 38":"60 50"} l6 6 l-4 1 l8 8" fill="none" stroke="#e0a100" stroke-width="2"/>`;
+  return `<svg viewBox="0 0 120 80" role="img" aria-label="Esquema da configuração ${cfg}">${box}${el}${bar}${arc}</svg>`;
+}
+
+function params() {
+  const n=id=>{ const v=parseFloat($(id).value); return Number.isFinite(v)?v:0; };
+  return { cli:$("cli").value.trim(), prj:$("prj").value.trim(), uni:$("uni").value.trim(), tag:$("tag").value.trim(), author:$("author").value.trim(), rev:$("rev").value.trim(), date:$("date").value,
+    v:n("v"), ibf:n("ibf"), hz:n("hz"), cfg:$("cfg").value, g:n("g"), d:n("d"), t:n("t"), tmin:n("tmin"), ew:n("ew"), eh:n("eh"), ed:n("ed"), cover:$("cover").checked };
+}
+function dateBR(iso) { if (!iso) return ""; const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; }
+
+function update() {
+  const p=params(), r=compute(p);
+  $("cfg-fig").innerHTML=`${cfgSvg(p.cfg)}<div><p><b>${p.cfg}.</b> ${esc(CFGS[p.cfg].t)}.</p><p class="ref">${CFGS[p.cfg].box?"Fator de correção do invólucro aplicado":"Ao ar livre: sem fator de invólucro"}</p></div>`;
+  $("enc-sec").hidden=!CFGS[p.cfg].box;
+  const v=$("verdict");
+  if (r.errs.length) {
+    v.className="verdict fail";
+    v.innerHTML=`<span class="eyebrow">Sem cálculo</span><div class="vtitle">Revise os dados</div><p>${esc(r.errs[0])}</p>`;
+    $("nums").innerHTML=""; $("ladder").innerHTML=""; $("pdf").disabled=true;
+  } else {
+    const c=r.cat;
+    v.className="verdict"+(c.tone==="bad"?" fail":c.tone==="warn"?" warn":"");
+    const atpv=c.atpv?`ATPV mínimo de ${fmtF(c.atpv,1)} cal/cm²`:(c.cat==="0"?"sem ATPV mínimo":"sem vestimenta padronizada");
+    v.innerHTML=`<span class="eyebrow">Energia incidente a ${fmt(p.d)} mm</span><div class="vtitle">${fmtF(r.cal,2)} cal/cm²</div><div style="font-weight:600">Risco ${c.risk.toLowerCase()} · Categoria ${c.cat} · ${atpv}</div><p>${esc(c.ppe)}</p>`;
+    $("nums").innerHTML=[
+      [fmtF(r.Ia,3)+" kA","Corrente de arco Ia"],
+      [fmtF(r.E,3)+" J/cm²","Energia incidente"],
+      [fmt(r.AFB)+" mm","Limite de aproximação do arco"],
+      [fmtF(r.cf.CF,3),r.cf.open?"Fator de invólucro (ao ar livre)":`Fator de invólucro, ${r.cf.shallow?"raso":"típico"}`],
+    ].map(([b,s])=>`<div class="num"><b>${b}</b><span>${esc(s)}</span></div>`).join("");
+    const rows=[["full","Corrente de arco plena",r.full,"T"],["min","Corrente de arco mínima",r.min,"Tmin"]];
+    $("ladder").innerHTML=rows.map(([id,t,s,tl])=>{
+      const pick=r.worst===id;
+      return `<li class="rung${pick?" pick":""}"><h3>${t}</h3>${pick?`<span class="chip pick">Determinante</span>`:`<span class="chip ok">Menor</span>`}<p class="prod">${fmtF(s.cal,2)} cal/cm² · ${fmtF(s.E,3)} J/cm² · AFB ${fmt(s.AFB)} mm</p><p>Ia = ${fmtF(s.Ia,3)} kA durante ${tl} = ${fmt(s.T)} ms.${id==="min"?` Fator de variação VarCf = ${fmtF(r.VarCf,4)}, Ia mín. = Ia · (1 − 0,5 · VarCf).`:""}</p></li>`;
+    }).join("");
+    $("pdf").disabled=false;
+  }
+  $("alerts").innerHTML=r.errs.slice(1).map(w=>`<div class="alert bad">${esc(w)}</div>`).join("")+r.warns.map(w=>`<div class="alert warn">${esc(w)}</div>`).join("")+r.tips.map(w=>`<div class="alert tip">${esc(w)}</div>`).join("");
+  $("memo").textContent=memo(r);
+  save();
+  return r;
+}
+
+function memo(r) {
+  const p=r.p, L=[];
+  L.push("DADOS");
+  L.push(`  ${p.cfg} (${CFGS[p.cfg].t}), Voc = ${fmtF(p.v/1000,3)} kV, Ibf = ${fmt(p.ibf,2)} kA, ${p.hz} Hz`);
+  L.push(`  G = ${fmt(p.g,1)} mm, D = ${fmt(p.d,1)} mm, T = ${fmt(p.t)} ms, Tmin = ${fmt(p.tmin)} ms`);
+  if (CFGS[p.cfg].box) L.push(`  Invólucro L × A × P = ${fmt(p.ew)} × ${fmt(p.eh)} × ${fmt(p.ed)} mm`);
+  if (r.errs.length) { L.push(""); L.push("  "+r.errs[0]); return L.join("\n"); }
+  L.push("");
+  L.push("CORRENTE DE ARCO (Equação 1, Tabela 1)");
+  L.push(`  Iarc,600 = ${fmtF(r.ia3[0],3)} kA; Iarc,2700 = ${fmtF(r.ia3[1],3)} kA; Iarc,14300 = ${fmtF(r.ia3[2],3)} kA`);
+  L.push(p.v<=600 ? `  Até 600 V (Equação 25): Ia = ${fmtF(r.Ia,3)} kA` : `  Interpolação entre níveis (Equações 16 a 18): Ia = ${fmtF(r.Ia,3)} kA`);
+  L.push(`  VarCf (Equação 2, Tabela 2) = ${fmtF(r.VarCf,4)}; Ia,mín = ${fmtF(r.min.Ia,3)} kA`);
+  L.push("");
+  L.push("FATOR DE CORREÇÃO DO INVÓLUCRO (Seção 4.8)");
+  if (r.cf.open) L.push("  Ao ar livre: CF = 1");
+  else {
+    L.push(`  Invólucro ${r.cf.shallow?"raso":"típico"}: largura equivalente ${fmtF(r.cf.W1,2)} pol, altura equivalente ${fmtF(r.cf.H1,2)} pol`);
+    L.push(`  EES = (largura + altura) / 2 = ${fmtF(r.cf.EES,2)} pol`);
+    L.push(`  CF = ${r.cf.shallow?"1 / ":""}(b1 · EES² + b2 · EES + b3) = ${fmtF(r.cf.CF,4)}`);
+  }
+  L.push("");
+  L.push("ENERGIA INCIDENTE E LIMITE DE APROXIMAÇÃO (Equações 3 a 10)");
+  L.push(`  Ia plena, T = ${fmt(r.full.T)} ms: E = ${fmtF(r.full.E,3)} J/cm² = ${fmtF(r.full.cal,2)} cal/cm²; AFB = ${fmtF(r.full.AFB,1)} mm`);
+  L.push(`  Ia mínima, Tmin = ${fmt(r.min.T)} ms: E = ${fmtF(r.min.E,3)} J/cm² = ${fmtF(r.min.cal,2)} cal/cm²; AFB = ${fmtF(r.min.AFB,1)} mm`);
+  L.push(`  Determinante: ${r.worst==="full"?"corrente plena":"corrente mínima"}`);
+  L.push("");
+  L.push("RESULTADO");
+  L.push(`  E = ${fmtF(r.E,3)} J/cm² = ${fmtF(r.cal,2)} cal/cm² a ${fmt(p.d)} mm`);
+  L.push(`  AFB = ${fmtF(r.AFB,1)} mm (1,2 cal/cm²)`);
+  L.push(`  Risco ${r.cat.risk.toLowerCase()}, categoria ${r.cat.cat}${r.cat.atpv?`, ATPV mínimo ${fmtF(r.cat.atpv,1)} cal/cm²`:""}`);
+  return L.join("\n");
+}
+
+function loadSaved() { try { const raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):null; } catch(e) { return null; } }
+function save() { try { const f={}; FIELDS.forEach(k=>f[k]=$(k).type==="checkbox"?$(k).checked:$(k).value); localStorage.setItem(KEY, JSON.stringify(f)); } catch(e) {} }
+
+function buildData() {
+  let c=`<table><thead><tr><th>Categoria</th><th>Risco</th><th class="n">Energia (cal/cm²)</th><th class="n">ATPV mínimo</th><th>Vestimenta e EPI</th></tr></thead><tbody>`;
+  let lo=0;
+  CATS.forEach(x=>{ c+=`<tr><td>${x.cat}</td><td>${x.risk}</td><td class="n">${x.max===Infinity?"acima de 40":`${fmtF(lo,1)} a ${fmtF(x.max,1)}`}</td><td class="n">${x.atpv?fmtF(x.atpv,1):"–"}</td><td class="wrapt">${esc(x.ppe)}</td></tr>`; lo=x.max; });
+  $("t-cat").innerHTML=c+"</tbody></table>";
+  $("t-range").innerHTML=`<table><thead><tr><th>Parâmetro</th><th>208 V a 600 V</th><th>601 V a 15 kV</th></tr></thead><tbody>
+    <tr><td>Corrente de curto-circuito Ibf</td><td>0,5 a 106 kA</td><td>0,2 a 65 kA</td></tr>
+    <tr><td>Distância entre condutores G</td><td>6,35 a 76,2 mm</td><td>19,05 a 254 mm</td></tr>
+    <tr><td>Distância de trabalho D</td><td colspan="2">305 mm ou mais</td></tr>
+    <tr><td>Frequência</td><td colspan="2">50 ou 60 Hz</td></tr>
+    <tr><td>Invólucro</td><td colspan="2">Largura e altura até 1244,6 mm no fator de correção, abertura até 1,549 m², largura de pelo menos 4 × G</td></tr>
+    <tr><td>Tempo de arco</td><td colspan="2">Sem limite no modelo. A norma admite 2 s como limite prático quando a pessoa consegue se afastar.</td></tr></tbody></table>
+    <h3 style="margin-top:14px">Valores típicos de G e D</h3><table><thead><tr><th>Equipamento</th><th class="n">G (mm)</th><th class="n">D (mm)</th></tr></thead><tbody>
+    <tr><td>Painel de manobra ou CCM de 15 kV</td><td class="n">152</td><td class="n">914,4</td></tr>
+    <tr><td>Painel de manobra ou CCM de 5 kV</td><td class="n">104</td><td class="n">914,4</td></tr>
+    <tr><td>Painel de manobra de baixa tensão</td><td class="n">32</td><td class="n">609,6</td></tr>
+    <tr><td>Quadro de distribuição ou CCM de baixa tensão</td><td class="n">25</td><td class="n">457,2</td></tr>
+    <tr><td>Caixa de junção de cabos</td><td class="n">13</td><td class="n">457,2</td></tr></tbody></table>`;
+  const nm=["600 V","2700 V","14300 V"];
+  let k=`<h3>Tabela 1: corrente de arco (k1 a k10)</h3><table><thead><tr><th>Config.</th><th>Voc</th>${[...Array(10)].map((_,i)=>`<th class="n">k${i+1}</th>`).join("")}</tr></thead><tbody>`;
+  Object.keys(K_IARC).forEach(cf=>K_IARC[cf].forEach((row,i)=>{ k+=`<tr><td>${cf}</td><td>${nm[i]}</td>${row.map(x=>`<td class="n">${x}</td>`).join("")}</tr>`; }));
+  k+=`</tbody></table><h3>Tabelas 3 a 5: energia incidente e limite de aproximação (k1 a k13)</h3><table><thead><tr><th>Config.</th><th>Voc</th>${[...Array(13)].map((_,i)=>`<th class="n">k${i+1}</th>`).join("")}</tr></thead><tbody>`;
+  Object.keys(K_E).forEach(cf=>K_E[cf].forEach((row,i)=>{ k+=`<tr><td>${cf}</td><td>${nm[i]}</td>${row.map(x=>`<td class="n">${x}</td>`).join("")}</tr>`; }));
+  k+=`</tbody></table><h3>Tabela 2: fator de variação (k1 a k7)</h3><table><thead><tr><th>Config.</th>${[...Array(7)].map((_,i)=>`<th class="n">k${i+1}</th>`).join("")}</tr></thead><tbody>`;
+  Object.keys(K_VAR).forEach(cf=>{ k+=`<tr><td>${cf}</td>${K_VAR[cf].map(x=>`<td class="n">${x}</td>`).join("")}</tr>`; });
+  k+=`</tbody></table><h3>Tabelas 7 e 8: invólucro</h3><table><thead><tr><th>Config.</th><th class="n">A</th><th class="n">B</th><th class="n">b1, b2, b3 típico</th><th class="n">b1, b2, b3 raso</th></tr></thead><tbody>`;
+  Object.keys(K_AB).forEach(cf=>{ k+=`<tr><td>${cf}</td><td class="n">${K_AB[cf][0]}</td><td class="n">${K_AB[cf][1]}</td><td class="n">${K_CF.typical[cf].join("; ")}</td><td class="n">${K_CF.shallow[cf].join("; ")}</td></tr>`; });
+  $("t-coef").innerHTML=k+"</tbody></table>";
+}
+
+/* ---------- PDF ---------- */
+async function dataUrl(src) {
+  const res=await fetch(src); if (!res.ok) throw new Error(src);
+  const blob=await res.blob();
+  return await new Promise((ok,ko)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=ko; fr.readAsDataURL(blob); });
+}
+async function makePdf() {
+  const r=update(); if (r.errs.length) return;
+  const msg=$("pdfmsg"), btn=$("pdf");
+  if (!window.jspdf) { msg.textContent="A biblioteca de PDF não carregou. Recarregue a página e tente de novo."; return; }
+  btn.disabled=true; btn.textContent="Gerando...";
+  try {
+    const [logo, capa] = await Promise.all([dataUrl("img/jav/logo.png"), r.p.cover?dataUrl("img/jav/capa.jpg"):null]);
+    const doc=buildPdf(r, logo, capa);
+    const safe=s=>s.normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^A-Za-z0-9-]+/g,"-").replace(/^-+|-+$/g,"");
+    const name=["Energia-incidente", safe(r.p.prj), safe(r.p.tag)].filter(Boolean).join("_")+".pdf";
+    doc.save(name);
+    msg.textContent=`PDF gerado: ${name}`;
+  } catch(e) {
+    msg.textContent="Não foi possível gerar o PDF. Abra a página pelo site publicado, e não como arquivo local, e tente de novo.";
+  } finally { btn.disabled=false; btn.textContent="Gerar PDF"; }
+}
+
+function buildPdf(r, logo, capa) {
+  const p=r.p, {jsPDF}=window.jspdf;
+  const doc=new jsPDF({unit:"mm", format:"a4"});
+  const NAVY=COMPANY.navy, BLUE=COMPANY.blue, X0=18, X1=192;
+  const date=dateBR(p.date)||new Date().toLocaleDateString("pt-BR");
+  const title=p.prj||"Relatório";
+  const kv=fmtF(p.v/1000,3);
+
+  if (capa) {
+    doc.addImage(capa,"JPEG",0,0,210,297);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...BLUE); doc.setFontSize(30);
+    doc.text("Relatório de", 74, 92); doc.text("Energia Incidente", 74, 105);
+    doc.setTextColor(255,255,255); doc.setFontSize(26); doc.text(title, 74, 119);
+    doc.setFontSize(12); doc.text("Arco elétrico segundo a IEEE 1584-2018", 74, 129);
+    doc.setFontSize(16); doc.text(COMPANY.slogan, 22, 247);
+    doc.setFontSize(12);
+    let cy=255;
+    [["Cliente: ",p.cli],["Equipamento: ",p.tag],["Elaborado por: ",p.author]].forEach(([a,b])=>{ if (b) { doc.text(a+b, 24, cy); cy+=6.5; } });
+    doc.addPage();
+  }
+
+  const header=()=>{
+    doc.addImage(logo,"PNG",X0,9,34,15,"logo","FAST");
+    doc.setFont("helvetica","normal"); doc.setTextColor(...NAVY); doc.setFontSize(12.5);
+    doc.text(`RELATÓRIO: ${title}`, 112, 18, {align:"center"});
+    doc.setTextColor(...BLUE); doc.setFontSize(12); doc.text(COMPANY.site, X1, 14, {align:"right"});
+    doc.setTextColor(...NAVY); doc.setFontSize(9); doc.text(`DATA: ${date}`, X1, 20, {align:"right"});
+    doc.setDrawColor(...NAVY); doc.setLineWidth(0.35); doc.line(X0, 27, X1, 27);
+  };
+  const footer=()=>{
+    doc.setDrawColor(...NAVY); doc.setLineWidth(0.35); doc.line(X0, 270, X1, 270);
+    doc.setFont("helvetica","normal"); doc.setTextColor(...NAVY); doc.setFontSize(8.5);
+    COMPANY.footer.forEach((t,i)=>doc.text(t, 105, 275+i*4.2, {align:"center"}));
+  };
+  header();
+  let y=37;
+  const need=h=>{ if (y+h>264) { doc.addPage(); header(); y=37; } };
+  const hr=()=>{ need(4); doc.setDrawColor(150,150,150); doc.setLineWidth(0.25); doc.line(X0, y, X1, y); y+=5.5; };
+  const h=(t)=>{ need(9); doc.setFont("helvetica","bold"); doc.setFontSize(11.5); doc.setTextColor(20,24,28); doc.text(t, X0, y); y+=6.5; };
+  // need() pode abrir página e trocar fonte e cor no cabeçalho: o estilo é aplicado depois dele.
+  const row=(a,b)=>{
+    doc.setFont("helvetica","bold"); doc.setFontSize(9.5);
+    const lines=doc.splitTextToSize(b, X1-118);
+    need(5.1*lines.length);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(70,76,82); doc.text(a, X0, y);
+    doc.setFont("helvetica","bold"); doc.setTextColor(20,24,28); doc.text(lines, 118, y);
+    y+=5.1*lines.length;
+  };
+  const para=(t,size=9.5,color=[70,76,82])=>{
+    doc.setFont("helvetica","normal"); doc.setFontSize(size);
+    const l=doc.splitTextToSize(t, X1-X0); need(l.length*size*0.45+1);
+    doc.setFont("helvetica","normal"); doc.setFontSize(size); doc.setTextColor(...color);
+    doc.text(l, X0, y); y+=l.length*size*0.45+1.5;
+  };
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(14); doc.setTextColor(20,24,28);
+  doc.text("RELATÓRIO DE ENERGIA INCIDENTE PARA ARCO INTERNO", X0, y); y+=7;
+  para("Cálculo segundo a norma IEEE 1584-2018 – Guide for Performing Arc-Flash Hazard Calculations.");
+  para("Faixa de aplicação: 208 V a 15 kV; 50 e 60 Hz; curto-circuito de 0,5 a 106 kA até 600 V e de 0,2 a 65 kA acima de 600 V; espaçamento entre condutores de 6,35 a 76,2 mm até 600 V e de 19,05 a 254 mm acima de 600 V.");
+  y+=1; hr();
+
+  h("Identificação");
+  row("Cliente", p.cli||"–");
+  row("Projeto", p.prj||"–");
+  if (p.uni) row("Unidade", p.uni);
+  if (p.tag) row("Equipamento", p.tag);
+  row("Revisão", p.rev||"00");
+  y+=1; hr();
+
+  h("Dados fornecidos");
+  row("Configuração dos eletrodos", `${p.cfg} – ${CFGS[p.cfg].t.toLowerCase()}`);
+  row("Ibf – Corrente de curto-circuito trifásica", `${fmt(p.ibf,2)} kA`);
+  row("Voc – Tensão do sistema", `${kv} kV, ${p.hz} Hz`);
+  row("G – Distância entre condutores", `${fmt(p.g,1)} mm`);
+  row("D – Distância de trabalho", `${fmt(p.d,1)} mm`);
+  row("T – Tempo de arco para Ia", `${fmt(p.t)} ms`);
+  row("Tmin – Tempo de arco para Ia mínima", `${fmt(p.tmin)} ms`);
+  if (CFGS[p.cfg].box) row("Dimensões do invólucro (L × A × P)", `${fmt(p.ew)} × ${fmt(p.eh)} × ${fmt(p.ed)} mm`);
+  y+=1; hr();
+
+  h("Dados calculados");
+  row("Ia – Corrente de arco", `${fmtF(r.Ia,3)} kA`);
+  row("Ia,mín – Corrente de arco mínima", `${fmtF(r.min.Ia,3)} kA`);
+  row("CF – Fator de correção do invólucro", r.cf.open?"1 (ao ar livre)":`${fmtF(r.cf.CF,3)} (invólucro ${r.cf.shallow?"raso":"típico"}, EES ${fmtF(r.cf.EES,2)} pol)`);
+  row("E – Energia incidente", `${fmtF(r.E,3)} J/cm² – ${fmtF(r.cal,2)} cal/cm²`);
+  row("AFB – Limite de aproximação do arco", `${fmtF(r.AFB,1)} mm`);
+  row("Cenário determinante", r.worst==="full"?`corrente plena (Ia, ${fmt(p.t)} ms)`:`corrente mínima (Ia,mín, ${fmt(p.tmin)} ms)`);
+  y+=1; hr();
+
+  // Faixa de resultado com a cor do risco.
+  const c=r.cat, tones={ok:[220,236,226], warn:[245,232,207], bad:[245,223,220]}, ink={ok:[29,107,63], warn:[138,86,0], bad:[161,43,35]};
+  need(24);
+  doc.setFillColor(...tones[c.tone]); doc.rect(X0, y-5, X1-X0, 11, "F");
+  doc.setFont("helvetica","bold"); doc.setFontSize(12.5); doc.setTextColor(...ink[c.tone]);
+  const atpv=c.atpv?`ATPV: ${fmtF(c.atpv,1)} cal/cm²`:(c.cat==="0"?"ATPV: não exigido":"ATPV: sem vestimenta padronizada");
+  doc.text(`Risco: ${c.risk}     Categoria: ${c.cat}     ${atpv}`, X0+4, y+2.3); y+=12;
+  para(`Vestimenta e EPI: ${c.ppe}`, 9.5, [40,46,52]);
+  y+=1; hr();
+
+  // No PDF entram só os avisos que mudam a leitura do resultado.
+  const obs=r.warns;
+  if (obs.length) { h("Observações"); obs.forEach(o=>para("• "+o, 9)); y+=1; hr(); }
+
+  need(28);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(70,76,82);
+  doc.text(`Relatório emitido em ${date}.`, X0, y); y+=16;
+  doc.setDrawColor(20,24,28); doc.setLineWidth(0.3); doc.line(X0, y, X0+80, y); y+=5;
+  doc.setTextColor(20,24,28); doc.text(p.author||"Responsável técnico", X0, y);
+
+  // Rodapé e numeração em todas as páginas de conteúdo.
+  const total=doc.getNumberOfPages();
+  for (let i=1;i<=total;i++) {
+    if (capa && i===1) continue;
+    doc.setPage(i); footer();
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(...NAVY);
+    doc.text(String(i), X1, 275, {align:"right"});
+  }
+  return doc;
+}
+
+$("pdf").addEventListener("click", makePdf);
+$("copy").addEventListener("click",async()=>{
+  const b=$("copy");
+  try { await navigator.clipboard.writeText($("memo").textContent); b.textContent="Memorial copiado"; }
+  catch(e) { const s=getSelection(), rg=document.createRange(); rg.selectNodeContents($("memo")); s.removeAllRanges(); s.addRange(rg); b.textContent="Texto selecionado: use Ctrl+C"; }
+  setTimeout(()=>{b.textContent="Copiar memorial";},2500);
+});
+$("equip").addEventListener("input",()=>{ const e=EQUIP[$("equip").value]; if (e) { $("g").value=e[0]; $("d").value=e[1]; } });
+["g","d"].forEach(id=>$(id).addEventListener("input",()=>{ $("equip").value=""; }));
+FIELDS.forEach(id=>$(id).addEventListener("input",update));
+
+const saved=loadSaved();
+if (saved) FIELDS.forEach(k=>{ if (saved[k]!==undefined) { if ($(k).type==="checkbox") $(k).checked=!!saved[k]; else $(k).value=saved[k]; } });
+if (!$("date").value) { const d=new Date(); $("date").value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+buildData(); update();
+</script>
+</body>
+</html>
