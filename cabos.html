@@ -1,0 +1,1104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Dimensiona cabos de baixa tensão pela NBR 5410: corrente de projeto, capacidade de condução, fatores de temperatura e agrupamento, queda de tensão em CA e CC, neutro, proteção e eletroduto.">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>Dimensionamento de Cabos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Mesma folha de cálculo do balanço térmico: entradas à esquerda, resultado à direita, memorial e dados abaixo. */
+:root {
+  --bg: #e9eaea; --panel: #f6f6f5; --field: #ffffff; --line: #c6c8c8; --line-strong: #8f9393;
+  --fg: #20262a; --muted: #586066; --accent: #0b5a8a; --accent-fg: #ffffff; --accent-soft: #d9e7ef;
+  --ok: #1d6b3f; --ok-soft: #dcece2; --warn: #8a5600; --warn-soft: #f5e8cf; --bad: #a12b23; --bad-soft: #f5dfdc;
+  --display: "Barlow Semi Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #16191b; --panel: #1f2326; --field: #272c30; --line: #3a4045; --line-strong: #626a70;
+  --fg: #e8eaeb; --muted: #a4acb2; --accent: #6db7e4; --accent-fg: #0c1c26; --accent-soft: #1b3343;
+  --ok: #7ccf9f; --ok-soft: #1a3226; --warn: #e6b868; --warn-soft: #3a2d15; --bad: #f0978f; --bad-soft: #3d201d;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 400 15px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 56px; display: grid; gap: 22px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(30px, 4.4vw, 42px); font-weight: 700; line-height: 1.05; }
+h2 { font-size: 21px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; }
+.sub { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+.tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line-strong); margin-bottom: 14px; }
+.tabs a { padding: 7px 14px; text-decoration: none; color: var(--muted); font: 600 15px var(--display); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; }
+.tabs a:hover { color: var(--accent); }
+.tabs a[aria-current="page"] { color: var(--fg); background: var(--panel); border-color: var(--line-strong); }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.col { display: grid; gap: 22px; min-width: 0; }
+section.sheet { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 14px; min-width: 0; }
+.head-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.note { color: var(--muted); font-size: 13.5px; }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 500; color: var(--muted); min-width: 0; }
+input, select { font: 400 15px var(--body); color: var(--fg); background: var(--field); border: 1px solid var(--line-strong); padding: 7px 9px; width: 100%; min-width: 0; border-radius: 2px; }
+input[type=number] { font-family: var(--mono); font-size: 14px; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: 600 14px var(--body); cursor: pointer; border-radius: 2px; padding: 8px 12px; border: 1px solid var(--accent); background: transparent; color: var(--accent); }
+button:hover { background: var(--accent-soft); }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.grid2, .grid3 { align-items: end; }
+.span2 { grid-column: span 2; }
+.span-all { grid-column: 1 / -1; }
+.fig { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px 14px; align-items: center; border: 1px solid var(--line); background: var(--field); padding: 10px 12px; }
+.fig p { font-size: 14px; }
+.fig .ref { font: 600 13px var(--body); color: var(--accent); margin-top: 3px; }
+/* Os desenhos do material são pretos sobre branco: ficam numa placa branca também no tema escuro. */
+.plate { background: #fff; border: 1px solid var(--line); padding: 5px; display: inline-grid; place-items: center; min-width: 0; }
+.plate img { display: block; max-width: 100%; height: auto; }
+.fig .plate img { max-height: 120px; width: auto; }
+.verdict { border: 2px solid var(--accent); background: var(--accent-soft); padding: 16px 18px; display: grid; gap: 6px; }
+.verdict.fail { border-color: var(--bad); background: var(--bad-soft); }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.vtitle { font: 700 clamp(25px, 3.4vw, 33px)/1.1 var(--display); }
+.nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); }
+.num { padding: 10px 12px; border-left: 1px solid var(--line); min-width: 0; }
+.num:first-child { border-left: 0; }
+.num b { display: block; font: 500 21px/1.2 var(--mono); }
+.num span { font-size: 12.5px; color: var(--muted); }
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; }
+.rung { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; padding: 11px 12px; border: 1px solid var(--line); border-top-width: 0; }
+.rung:first-child { border-top-width: 1px; }
+.rung.pick { background: var(--accent-soft); border-color: var(--accent); border-top-width: 1px; }
+.rung p { grid-column: 1 / -1; font-size: 14px; }
+.rung .prod { font-weight: 600; }
+.chip { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 2px; align-self: start; white-space: nowrap; }
+.chip.pick { background: var(--accent); color: var(--accent-fg); }
+.chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.no { background: var(--bad-soft); color: var(--bad); }
+.alert { font-size: 14px; padding: 8px 11px; }
+.alert.warn { background: var(--warn-soft); color: var(--warn); }
+.alert.bad { background: var(--bad-soft); color: var(--bad); }
+.alert.tip { background: var(--ok-soft); color: var(--ok); }
+.alerts { display: grid; gap: 6px; }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--line); }
+.kv > * { padding: 8px 12px; border-top: 1px solid var(--line); min-width: 0; }
+.kv > :nth-child(-n+2) { border-top: 0; }
+.kv dt { font-size: 14px; }
+.kv dt small { display: block; color: var(--muted); font-size: 12.5px; }
+.kv dd { margin: 0; font: 500 15px var(--mono); text-align: right; white-space: nowrap; }
+.duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 14px; align-items: center; }
+pre.memo { margin: 0; font: 400 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--field); border: 1px solid var(--line); padding: 12px; }
+details { border-top: 1px solid var(--line); padding-top: 10px; }
+summary { cursor: pointer; font: 600 16px var(--display); }
+.tw { overflow-x: auto; margin-top: 10px; }
+.tw h3 { margin: 14px 0 4px; }
+.tw h3:first-child { margin-top: 0; }
+.tw .note { margin: 4px 0 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 5px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-weight: 600; color: var(--muted); }
+td.n, th.n { text-align: right; font-family: var(--mono); font-size: 13px; }
+td.wrapt { white-space: normal; min-width: 220px; }
+tr.sel td { background: var(--accent-soft); }
+.gallery td { vertical-align: middle; }
+.gallery .plate img { max-height: 90px; width: auto; }
+.refimgs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 10px; }
+.refimgs figure { margin: 0; display: grid; gap: 6px; }
+.refimgs figcaption { font-size: 13px; color: var(--muted); }
+ul.src { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 14px; }
+a { color: var(--accent); }
+@media (max-width: 940px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 560px) {
+  .wrap { padding: 20px 16px 40px; }
+  .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .num:nth-child(3) { border-left: 0; }
+  .num:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .fig, .duo { grid-template-columns: minmax(0, 1fr); }
+  .span2 { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <nav class="tabs" aria-label="Ferramentas">
+      <a href="index.html">Balanço térmico</a>
+      <a href="cabos.html" aria-current="page">Dimensionamento de cabos</a>
+    </nav>
+    <h1>Dimensionamento de Cabos</h1>
+    <p class="sub">Informe o circuito, o cabo e a forma de instalação. A página calcula a corrente de projeto, aplica os fatores de temperatura e agrupamento da NBR 5410, confere a queda de tensão em corrente alternada ou contínua e indica a seção, o neutro, o condutor de proteção e o eletroduto. O circuito abaixo é um exemplo: troque pelos seus dados.</p>
+  </header>
+
+  <div class="layout">
+    <div class="col">
+      <section class="sheet" aria-labelledby="h-cir">
+        <h2 id="h-cir">1. Circuito</h2>
+        <div class="grid2">
+          <label for="sys">Tipo de corrente e ligação
+            <select id="sys">
+              <option value="cc">Corrente contínua (2 condutores)</option>
+              <option value="mono">CA monofásico, fase e neutro</option>
+              <option value="bif">CA bifásico, duas fases</option>
+              <option value="tri" selected>CA trifásico, 3 fases</option>
+              <option value="trin">CA trifásico com neutro</option>
+            </select>
+          </label>
+          <label for="v"><span id="v-lab">Tensão entre fases (V)</span><input id="v" type="number" min="1" step="1" value="380"></label>
+        </div>
+        <div class="grid3">
+          <label for="loadby">Carga informada por
+            <select id="loadby">
+              <option value="A">Corrente (A)</option>
+              <option value="kW">Potência ativa (kW)</option>
+              <option value="kVA">Potência aparente (kVA)</option>
+              <option value="cv" selected>Motor, potência no eixo (CV)</option>
+              <option value="kWe">Motor, potência no eixo (kW)</option>
+            </select>
+          </label>
+          <label for="load"><span id="load-lab">Valor</span><input id="load" type="number" min="0" step="any" value="30"></label>
+          <label for="fp" id="fp-wrap">Fator de potência<input id="fp" type="number" min="0.1" max="1" step="0.01" value="0.85"></label>
+          <label for="eff" id="eff-wrap">Rendimento (%)<input id="eff" type="number" min="1" max="100" step="1" value="91"></label>
+          <label for="len">Comprimento (m)<input id="len" type="number" min="0" step="1" value="80"></label>
+          <label for="dvmax">Queda máxima (%)<input id="dvmax" type="number" min="0.1" step="0.5" value="4"></label>
+        </div>
+        <div class="grid2">
+          <label for="use">Utilização do circuito (seção mínima)
+            <select id="use">
+              <option value="force" selected>Força</option>
+              <option value="light">Iluminação</option>
+              <option value="ctrl">Sinalização e controle</option>
+              <option value="flex">Ligação flexível, qualquer aplicação</option>
+            </select>
+          </label>
+          <label for="inom">Corrente do disjuntor In (A), opcional<input id="inom" type="number" min="0" step="1" placeholder="Em branco: só Ib"></label>
+        </div>
+        <details>
+          <summary>Limites de queda de tensão</summary>
+          <div class="duo" style="margin-top:10px">
+            <p class="note">A NBR 5410 admite 7% da origem da instalação até o ponto de utilização, com 4% a partir do quadro terminal. Use 4% para circuitos terminais. Para alimentadores entre quadros, informe a parcela que sobra do total.</p>
+            <span class="plate"><img src="img/referencia/queda-tensao-limites.png" alt="Figura 10.11: limites de queda de tensão de 4% do quadro terminal à carga e 7% da subestação à carga, com 1% em cada trecho entre subestação, caixa seccionadora, quadro geral e quadros terminais" width="465" height="425" loading="lazy"></span>
+          </div>
+        </details>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-cab">
+        <h2 id="h-cab">2. Cabo e instalação</h2>
+        <div class="grid2">
+          <label for="mat">Material do condutor
+            <select id="mat"><option value="cu" selected>Cobre</option><option value="al">Alumínio</option></select>
+          </label>
+          <label for="ins">Isolação
+            <select id="ins"><option value="pvc" selected>PVC, 70 °C (cabo 750 V)</option><option value="epr">EPR ou XLPE, 90 °C</option></select>
+          </label>
+        </div>
+        <label for="meth">Método de instalação (Tabela 33 da NBR 5410)
+          <select id="meth"></select>
+        </label>
+        <div class="fig" id="meth-fig"></div>
+        <div class="grid2">
+          <label for="cable" id="cable-wrap">Construção do cabo
+            <select id="cable"><option value="u">Condutores isolados ou cabos unipolares</option><option value="m">Cabo multipolar</option></select>
+          </label>
+          <label for="arr" id="arr-wrap">Disposição dos unipolares
+            <select id="arr"></select>
+          </label>
+          <label for="duct" id="duct-wrap">Eletroduto ou eletrocalha
+            <select id="duct"><option value="pvc" selected>PVC ou outro não magnético</option><option value="steel">Aço, magnético</option></select>
+          </label>
+        </div>
+        <div class="fig" id="arr-fig" hidden></div>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-cor">
+        <h2 id="h-cor">3. Fatores de correção</h2>
+        <div class="grid3">
+          <label for="temp"><span id="temp-lab">Temperatura ambiente (°C)</span><input id="temp" type="number" step="1" value="35"></label>
+          <label for="grp" class="span2">Agrupamento (Tabela 42)
+            <select id="grp">
+              <option value="1">1. Feixe ao ar livre ou sobre superfície, ou em conduto fechado</option>
+              <option value="2">2. Camada única sobre parede, piso, bandeja não perfurada ou prateleira</option>
+              <option value="3">3. Camada única no teto</option>
+              <option value="4">4. Camada única em bandeja perfurada</option>
+              <option value="5">5. Camada única em leito ou suporte</option>
+              <option value="man">Informar o fator manualmente</option>
+            </select>
+          </label>
+          <label for="ncir">Circuitos ou cabos multipolares agrupados<input id="ncir" type="number" min="1" step="1" value="3"></label>
+          <label for="fman" id="fman-wrap">Fator de agrupamento manual<input id="fman" type="number" min="0.1" max="1" step="0.01" value="0.8"></label>
+        </div>
+        <p class="note">Conte como circuito cada conjunto de condutores carregados que corre junto, incluindo este. Fora das linhas da tabela, a página usa a linha seguinte, a favor da segurança.</p>
+      </section>
+
+      <section class="sheet" aria-labelledby="h-cond">
+        <h2 id="h-cond">4. Neutro, proteção e eletroduto</h2>
+        <div class="grid2">
+          <label for="pe">Condutor de proteção (PE)
+            <select id="pe"><option value="in" selected>Sim, no mesmo eletroduto ou cabo</option><option value="out">Sim, por outro caminho</option><option value="no">Não</option></select>
+          </label>
+          <label for="nred" id="nred-wrap">Neutro do trifásico
+            <select id="nred"><option value="1" selected>Reduzido pela Tabela 48</option><option value="0">Igual à fase</option></select>
+          </label>
+        </div>
+        <div id="conduit-in" class="grid3">
+          <label for="wire">Condutores (Tabela A)
+            <select id="wire"><option value="cabo" selected>Cabos (flexíveis ou encordoados)</option><option value="fio">Fios sólidos</option></select>
+          </label>
+          <label for="dext" id="dext-wrap">Diâmetro externo do cabo multipolar (mm)<input id="dext" type="number" min="1" step="0.1" value="20"></label>
+          <label for="nduct">Circuitos iguais no mesmo eletroduto<input id="nduct" type="number" min="1" step="1" value="1"></label>
+        </div>
+        <p class="note" id="conduit-none" hidden>O método de instalação escolhido não usa eletroduto de seção circular, então a página não dimensiona o eletroduto.</p>
+      </section>
+    </div>
+
+    <div class="col">
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <div class="nums" id="nums"></div>
+      <div class="alerts" id="alerts"></div>
+      <section class="sheet" aria-labelledby="h-crit">
+        <h2 id="h-crit">Critérios avaliados</h2>
+        <p class="note">A seção adotada é a maior entre as exigidas pelos critérios abaixo.</p>
+        <ol class="ladder" id="ladder"></ol>
+      </section>
+      <section class="sheet" aria-labelledby="h-res">
+        <h2 id="h-res">Condutores e eletroduto</h2>
+        <dl class="kv" id="cond" style="margin:0"></dl>
+        <div class="duo" id="conduit-out"></div>
+      </section>
+      <section class="sheet" aria-labelledby="h-mem">
+        <div class="head-row">
+          <h2 id="h-mem">Memorial de cálculo</h2>
+          <button type="button" id="copy">Copiar memorial</button>
+        </div>
+        <pre class="memo" id="memo"></pre>
+      </section>
+    </div>
+  </div>
+
+  <section class="sheet" aria-labelledby="h-dados">
+    <h2 id="h-dados">Dados e limites</h2>
+    <details>
+      <summary>Métodos de instalação (Tabela 33 da NBR 5410)</summary>
+      <div class="tw" id="t-meth"></div>
+    </details>
+    <details>
+      <summary>Capacidade de condução de corrente (Tabelas 36 a 39)</summary>
+      <div class="tw" id="t-amp"></div>
+    </details>
+    <details>
+      <summary>Fatores de correção de temperatura e agrupamento (Tabelas 40 e 42)</summary>
+      <div class="tw" id="t-fac"></div>
+    </details>
+    <details>
+      <summary>Queda de tensão em V/A·km (Tabela 19, Pirelli)</summary>
+      <div class="tw" id="t-dv"></div>
+    </details>
+    <details>
+      <summary>Seções mínimas, neutro e condutor de proteção (Tabelas 47, 48 e 58)</summary>
+      <div class="tw" id="t-sec"></div>
+    </details>
+    <details>
+      <summary>Eletrodutos (Tabelas A a E)</summary>
+      <div class="tw" id="t-duct"></div>
+    </details>
+    <details open>
+      <summary>O que conferir antes de especificar</summary>
+      <ul class="src" style="margin-top:10px">
+        <li>As capacidades de corrente, os fatores e as seções vêm do material de apoio enviado, que reproduz as Tabelas 33, 35 a 40, 42, 47, 48 e 58 da NBR 5410:2004. Confira na norma em vigor antes de especificar.</li>
+        <li>Na reprodução da Tabela 39, a linha de cobre 300 mm², três condutores carregados, método E, traz 261 A, um erro de digitação evidente entre 538 A (240 mm²) e 745 A (400 mm²). A página usa 621 A. Na Tabela 38, as três últimas colunas do alumínio 630 mm² repetem os valores de 500 mm². A página usa os valores como estão, o que fica a favor da segurança.</li>
+        <li>A temperatura ambiente fora das linhas da Tabela 40 usa a linha seguinte, mais quente. Abaixo de 10 °C vale a linha de 10 °C.</li>
+        <li>Para linhas enterradas (método D), a Tabela 42 não vale. A NBR 5410 tem tabelas próprias de agrupamento para cabos enterrados e corrige a resistividade térmica do solo quando ela difere de 2,5 K·m/W. Essas tabelas não estão no material enviado: informe o fator manualmente.</li>
+        <li>Queda de tensão em CA com cobre de 1,5 mm² a 500 mm²: valores da Tabela 19 da Pirelli, que admite 70 °C no condutor. Entre FP 0,8 e 0,95 a página interpola. Fora dessa faixa ela estende a reta, o que dá valores um pouco maiores que os reais para seções grandes.</li>
+        <li>Queda de tensão em CA com alumínio, ou com cobre fora da Tabela 19: R calculado pela resistividade na temperatura máxima da isolação, com reatância de 0,10 Ω/km por condutor, valor típico de cabos de baixa tensão e próximo do que se deduz da Tabela 19.</li>
+        <li>Queda de tensão em CC: ΔV = 2 · ρ · L · I / S, com ρ do cobre (0,017241 Ω·mm²/m a 20 °C, α = 0,00393/K) ou do alumínio (0,028264 Ω·mm²/m, α = 0,00403/K) corrigido para a temperatura máxima da isolação, 70 °C ou 90 °C. Essas constantes não estão no material enviado: são os valores de referência da IEC 60228 e da IEC 60287.</li>
+        <li>No trifásico com neutro, a página considera 3 condutores carregados, como manda a NBR 5410 para circuitos equilibrados. Com harmônicas de terceira ordem acima de 15% o neutro conta como carregado e não pode ser reduzido. Nesse caso, escolha Igual à fase e revise o número de condutores carregados.</li>
+        <li>O condutor de proteção supõe o mesmo material da fase. O eletroduto pelas Tabelas A, B e C usa as áreas de condutores com isolação PVC e só vai até 240 mm².</li>
+        <li>A proteção contra sobrecarga segue a regra Ib ≤ In ≤ Iz quando a corrente do disjuntor é informada. A coordenação com curto-circuito (I²t do cabo) não é verificada.</li>
+        <li>Ferramenta de apoio ao dimensionamento. A responsabilidade pelo projeto continua com o profissional habilitado.</li>
+      </ul>
+    </details>
+    <details>
+      <summary>Fontes</summary>
+      <ul class="src" style="margin-top:10px">
+        <li>ABNT NBR 5410:2004, Instalações elétricas de baixa tensão: Tabelas 33, 35, 36, 37, 38, 39, 40, 42, 47, 48 e 58, reproduzidas no material de apoio "Tabela de Dimensionamento de Cabos".</li>
+        <li>Pirelli (hoje Prysmian), Tabelas de dimensionamento, baixa tensão: Tabela 19, queda de tensão em V/A·km para fio e cabo Pirastic e Pirastic Flex.</li>
+        <li>Material de apoio: roteiro de dimensionamento de eletrodutos, Tabelas A a E, e Figura 10.11 com os limites de queda de tensão.</li>
+      </ul>
+    </details>
+  </section>
+</div>
+
+<script id="engine">
+/* ---------- Dados ---------- */
+// Linha: seção em mm², depois os valores na ordem das colunas da tabela.
+function rows(txt) { const m=new Map(); txt.trim().split("\n").forEach(l=>{ const v=l.trim().split(/\s+/).map(x=>x==="-"?null:Number(x)); m.set(v[0], v.slice(1)); }); return m; }
+const SECS=[0.5,0.75,1,1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630,800,1000];
+const REFS_AD=["A1","A2","B1","B2","C","D"];
+
+// Tabela 36: PVC, 70 °C. Colunas: A1 2, A1 3, A2 2, A2 3, B1 2, B1 3, B2 2, B2 3, C 2, C 3, D 2, D 3.
+const T36_CU=rows(`
+0.5 7 7 7 7 9 8 9 8 10 9 12 10
+0.75 9 9 9 9 11 10 11 10 13 11 15 12
+1 11 10 11 10 14 12 13 12 15 14 18 15
+1.5 14.5 13.5 14 13 17.5 15.5 16.5 15 19.5 17.5 22 18
+2.5 19.5 18 18.5 17.5 24 21 23 20 27 24 29 24
+4 26 24 25 23 32 28 30 27 36 32 38 31
+6 34 31 32 29 41 36 38 34 46 41 47 39
+10 46 42 43 39 57 50 52 46 63 57 63 52
+16 61 56 57 52 76 68 69 62 85 76 81 67
+25 80 73 75 68 101 89 90 80 112 96 104 86
+35 99 89 92 83 125 110 111 99 138 119 125 103
+50 119 108 110 99 151 134 133 118 168 144 148 122
+70 151 136 139 125 192 171 168 149 213 184 183 151
+95 182 164 167 150 232 207 201 179 258 223 216 179
+120 210 188 192 172 269 239 232 206 299 259 246 203
+150 240 216 219 196 309 275 265 236 344 299 278 230
+185 273 245 248 223 353 314 300 268 392 341 312 258
+240 321 286 291 261 415 370 351 313 461 403 361 297
+300 367 328 334 298 477 426 401 358 530 464 408 336
+400 438 390 398 355 571 510 477 425 634 557 478 394
+500 502 447 456 406 656 587 545 486 729 642 540 445
+630 578 514 526 467 758 678 626 559 843 743 614 506
+800 669 593 609 540 881 788 723 645 978 865 700 577
+1000 767 679 698 618 1012 906 827 738 1125 996 792 652`);
+const T36_AL=rows(`
+10 36 32 33 31 44 39 41 36 49 44 48 40
+16 48 43 44 41 60 53 54 48 66 59 62 52
+25 63 57 58 53 79 70 71 62 83 73 80 66
+35 77 70 71 65 97 86 86 77 103 90 96 80
+50 93 84 86 78 118 104 104 92 125 110 113 94
+70 118 107 108 98 150 133 131 116 160 140 140 117
+95 142 129 130 118 181 161 157 139 195 170 166 138
+120 164 149 150 135 210 186 181 160 226 197 189 157
+150 189 170 172 155 241 214 206 183 261 227 213 178
+185 215 194 195 176 275 245 234 208 298 259 240 200
+240 252 227 229 207 324 288 274 243 352 305 277 230
+300 289 261 263 237 372 331 313 278 406 351 313 260
+400 345 311 314 283 446 397 372 331 488 422 366 305
+500 396 356 360 324 512 456 425 378 563 486 414 345
+630 456 410 416 373 592 527 488 435 653 562 471 391
+800 529 475 482 432 687 612 563 502 761 654 537 446
+1000 607 544 552 495 790 704 643 574 878 753 607 505`);
+// Tabela 37: EPR ou XLPE, 90 °C. Mesmas colunas da Tabela 36.
+const T37_CU=rows(`
+0.5 10 9 10 9 12 10 11 10 12 11 14 12
+0.75 12 11 12 11 15 13 15 13 16 14 18 15
+1 15 13 14 13 18 16 17 15 19 17 21 17
+1.5 19 17 18.5 16.5 23 20 22 19.5 24 22 26 22
+2.5 26 23 25 22 31 28 30 26 33 30 34 29
+4 35 31 33 30 42 37 40 35 45 40 44 37
+6 45 40 42 38 54 48 51 44 58 52 56 46
+10 61 54 57 51 75 66 69 60 80 71 73 61
+16 81 73 76 68 100 88 91 80 107 96 95 79
+25 106 95 99 89 133 117 119 105 138 119 121 101
+35 131 117 121 109 164 144 146 128 171 147 146 122
+50 158 141 145 130 198 175 175 154 209 179 173 144
+70 200 179 183 164 253 222 221 194 269 229 213 178
+95 241 216 220 197 306 269 265 233 328 278 252 211
+120 278 249 253 227 354 312 305 268 382 322 287 240
+150 318 285 290 259 407 358 349 307 441 371 324 271
+185 362 324 329 295 464 408 395 348 506 424 363 304
+240 424 380 386 346 546 481 462 407 599 500 419 351
+300 486 435 442 396 628 553 529 465 693 576 474 396
+400 579 519 527 472 751 661 628 552 835 692 555 464
+500 664 595 604 541 864 760 718 631 966 797 627 525
+630 765 685 696 623 998 879 825 725 1122 923 711 596
+800 885 792 805 721 1158 1020 952 837 1311 1074 811 679
+1000 1014 908 923 826 1332 1173 1088 957 1515 1237 916 767`);
+const T37_AL=rows(`
+16 64 58 60 55 79 71 72 64 84 76 73 61
+25 84 76 78 71 105 93 94 84 101 90 93 78
+35 103 94 96 87 130 116 115 103 126 112 112 94
+50 125 113 115 104 157 140 138 124 154 136 132 112
+70 158 142 145 131 200 179 175 156 198 174 163 138
+95 191 171 175 157 242 217 210 188 241 211 193 164
+120 220 197 201 180 281 251 242 216 280 245 220 186
+150 253 226 230 206 323 289 277 248 324 283 249 210
+185 288 256 262 233 368 330 314 281 371 323 279 236
+240 338 300 307 273 433 389 368 329 439 382 322 272
+300 387 344 352 313 499 447 421 377 508 440 364 308
+400 462 409 421 372 597 536 500 448 612 529 426 361
+500 530 468 483 426 687 617 573 513 707 610 482 408
+630 611 538 556 490 794 714 658 590 821 707 547 464
+800 708 622 644 566 922 830 760 682 958 824 624 529
+1000 812 712 739 648 1061 955 870 780 1108 950 706 598`);
+// Tabela 38: PVC, 70 °C. Colunas: E multipolar 2, E multipolar 3, F unipolares 2 justapostos, F 3 em trifólio,
+// F 3 no mesmo plano justapostos, G 3 espaçados na horizontal, G 3 espaçados na vertical.
+const T38_CU=rows(`
+0.5 11 9 11 8 9 12 10
+0.75 14 12 14 11 11 16 13
+1 17 14 17 13 14 19 16
+1.5 22 18.5 22 17 19 24 21
+2.5 30 25 31 24 25 34 29
+4 40 34 41 33 34 45 39
+6 51 43 53 43 45 59 51
+10 70 60 73 60 63 81 71
+16 94 80 99 82 85 110 97
+25 119 101 131 110 114 146 130
+35 148 126 162 137 143 181 162
+50 180 153 196 167 174 219 197
+70 232 196 251 216 225 281 254
+95 282 238 304 264 275 341 311
+120 328 276 352 308 321 396 362
+150 379 319 406 356 372 456 419
+185 434 364 463 409 427 521 480
+240 514 430 546 485 507 615 569
+300 593 497 629 561 587 709 659
+400 715 597 754 656 689 852 795
+500 826 689 868 749 789 982 920
+630 958 798 1005 855 905 1138 1070
+800 1118 930 1169 971 1119 1325 1251
+1000 1292 1073 1346 1079 1296 1528 1448`);
+const T38_AL=rows(`
+16 73 61 73 62 65 84 73
+25 89 78 98 84 87 112 99
+35 111 96 122 105 109 139 124
+50 135 117 149 128 133 169 152
+70 173 150 192 166 173 217 196
+95 210 183 235 203 212 265 241
+120 244 212 273 237 247 308 282
+150 282 245 316 274 287 356 327
+185 322 280 363 315 330 407 376
+240 380 330 430 375 392 482 447
+300 439 381 497 434 455 557 519
+400 528 458 600 526 552 671 629
+500 608 528 694 610 640 775 730
+630 705 613 808 711 640 775 730
+800 822 714 944 832 875 1050 1000
+1000 948 823 1092 965 1015 1213 1161`);
+// Tabela 39: EPR ou XLPE, 90 °C. Mesmas colunas da Tabela 38. Cobre 300 mm² E 3: 621 (a reprodução traz 261).
+const T39_CU=rows(`
+0.5 13 12 13 10 10 15 12
+0.75 17 15 17 13 14 19 16
+1 21 18 21 16 17 23 19
+1.5 26 23 27 21 22 30 25
+2.5 36 32 37 29 30 41 35
+4 49 42 50 40 42 56 48
+6 63 54 65 53 55 73 63
+10 86 75 90 74 77 101 88
+16 115 100 121 101 105 137 120
+25 149 127 161 135 141 182 161
+35 185 158 200 169 176 226 201
+50 225 192 242 207 216 275 246
+70 289 246 310 268 279 353 318
+95 352 298 377 328 342 430 389
+120 410 346 437 383 400 500 454
+150 473 399 504 444 464 577 527
+185 542 456 575 510 533 661 605
+240 641 538 679 607 634 781 719
+300 741 621 783 703 736 902 833
+400 892 745 940 823 868 1085 1008
+500 1030 859 1083 946 998 1253 1169
+630 1196 995 1254 1088 1151 1454 1362
+800 1396 1159 1460 1252 1328 1696 1595
+1000 1613 1336 1683 1420 1511 1958 1849`);
+const T39_AL=rows(`
+16 91 77 90 76 79 103 90
+25 108 97 121 103 107 138 122
+35 135 120 150 129 135 172 153
+50 164 146 184 159 165 210 188
+70 211 187 237 209 215 271 244
+95 257 227 289 253 264 332 300
+120 300 263 337 296 308 387 351
+150 346 302 389 343 358 448 408
+185 397 346 447 395 413 515 470
+240 470 409 530 471 492 611 561
+300 543 471 613 547 571 708 652
+400 654 566 740 663 694 856 792
+500 756 652 856 770 806 991 921
+630 879 755 996 899 942 1154 1077
+800 1026 879 1164 1056 1106 1351 1266
+1000 1186 1012 1347 1226 1285 1565 1472`);
+const AMP = {
+  pvc: { ad:{cu:T36_CU, al:T36_AL, name:"Tabela 36"}, efg:{cu:T38_CU, al:T38_AL, name:"Tabela 38"} },
+  epr: { ad:{cu:T37_CU, al:T37_AL, name:"Tabela 37"}, efg:{cu:T39_CU, al:T39_AL, name:"Tabela 39"} },
+};
+const INS = { pvc:{t:"PVC", tmax:70}, epr:{t:"EPR/XLPE", tmax:90} };
+const MAT = { cu:{t:"cobre", T:"Cobre", rho20:0.017241, alpha:0.00393}, al:{t:"alumínio", T:"Alumínio", rho20:0.028264, alpha:0.00403} };
+
+// Arranjos das Tabelas 38 e 39.
+const ARR = {
+  e2:{col:0, ref:"E", t:"Cabo multipolar, 2 condutores carregados", img:"e2"},
+  e3:{col:1, ref:"E", t:"Cabo multipolar, 3 condutores carregados", img:"e3"},
+  f2:{col:2, ref:"F", t:"Unipolares, 2 condutores carregados justapostos", img:"f2"},
+  f3t:{col:3, ref:"F", t:"Unipolares, 3 condutores em trifólio", img:"f3t"},
+  f3p:{col:4, ref:"F", t:"Unipolares, 3 condutores no mesmo plano, justapostos", img:"f3p"},
+  gh:{col:5, ref:"G", t:"Unipolares, 3 condutores espaçados na horizontal", img:"g-h"},
+  gv:{col:6, ref:"G", t:"Unipolares, 3 condutores espaçados na vertical", img:"g-v"},
+};
+
+// Tabela 33. Colunas: número, método de referência, construção (u unipolar, m multipolar, b ambos),
+// eletroduto de seção circular, linha sugerida da Tabela 42, descrição.
+const METHODS = [
+  ["1","A1","u",1,1,"Condutores isolados ou cabos unipolares em eletroduto de seção circular embutido em parede termicamente isolante"],
+  ["2","A2","m",1,1,"Cabo multipolar em eletroduto de seção circular embutido em parede termicamente isolante"],
+  ["3","B1","u",1,1,"Condutores isolados ou cabos unipolares em eletroduto aparente de seção circular"],
+  ["4","B2","m",1,1,"Cabo multipolar em eletroduto aparente de seção circular"],
+  ["5","B1","u",0,1,"Condutores isolados ou cabos unipolares em eletroduto aparente de seção não circular"],
+  ["6","B2","m",0,1,"Cabo multipolar em eletroduto aparente de seção não circular"],
+  ["7","B1","u",1,1,"Condutores isolados ou cabos unipolares em eletroduto de seção circular embutido em alvenaria"],
+  ["8","B2","m",1,1,"Cabo multipolar em eletroduto de seção circular embutido em alvenaria"],
+  ["11","C","b",0,2,"Cabos unipolares ou cabo multipolar sobre parede"],
+  ["11A","C","b",0,3,"Cabos unipolares ou cabo multipolar no teto"],
+  ["12","C","b",0,2,"Cabos unipolares ou cabo multipolar em bandeja não perfurada ou prateleira"],
+  ["13","EF","b",0,4,"Cabos unipolares ou cabo multipolar em bandeja perfurada, horizontal ou vertical"],
+  ["14","EF","b",0,5,"Cabos unipolares ou cabo multipolar sobre suportes horizontais"],
+  ["15","EF","b",0,1,"Cabos unipolares ou cabo multipolar afastado(s) da parede ou do teto"],
+  ["16","EF","b",0,5,"Cabos unipolares ou cabo multipolar em leito"],
+  ["17","EF","b",0,1,"Cabos unipolares ou cabo multipolar suspenso(s) por cabo de suporte, incorporado ou não"],
+  ["18","G","u",0,1,"Condutores nus ou isolados sobre isoladores"],
+  ["21","B2","b",0,1,"Cabos unipolares ou cabo multipolar em espaço de construção"],
+  ["22","B2","u",1,1,"Condutores isolados em eletroduto de seção circular em espaço de construção"],
+  ["23","B2","b",1,1,"Cabos unipolares ou cabo multipolar em eletroduto de seção circular em espaço de construção"],
+  ["24","B2","u",0,1,"Condutores isolados em eletroduto de seção não circular em espaço de construção"],
+  ["25","B2","b",0,1,"Cabos unipolares ou cabo multipolar em eletroduto de seção não circular em espaço de construção"],
+  ["26","B2","u",0,1,"Condutores isolados em eletroduto de seção não circular embutido em alvenaria"],
+  ["27","B2","b",0,1,"Cabos unipolares ou cabo multipolar em eletroduto de seção não circular embutido em alvenaria"],
+  ["33","B1","u",0,1,"Condutores isolados ou cabos unipolares em canaleta fechada encaixada no piso ou no solo"],
+  ["34","B2","m",0,1,"Cabo multipolar em canaleta fechada encaixada no piso ou no solo"],
+  ["35","B1","u",0,1,"Condutores isolados ou cabos unipolares em canaleta ou perfilado suspensa(o)"],
+  ["36","B2","m",0,1,"Cabo multipolar em canaleta suspensa"],
+  ["41","B2","u",1,1,"Condutores isolados ou cabos unipolares em eletroduto de seção circular contido em canaleta fechada com percurso horizontal ou vertical"],
+  ["42","B1","u",1,1,"Condutores isolados em eletroduto de seção circular contido em canaleta ventilada encaixada no piso ou no solo"],
+  ["43","B1","b",0,1,"Cabos unipolares ou cabo multipolar em canaleta ventilada encaixada no piso ou no solo"],
+  ["51","A1","m",0,1,"Cabo multipolar embutido diretamente em parede termicamente isolante"],
+  ["52","C","b",0,1,"Cabos unipolares ou cabo multipolar embutido(s) diretamente em alvenaria"],
+  ["53","C","b",0,1,"Cabos unipolares ou cabo multipolar embutido(s) diretamente em alvenaria com proteção mecânica adicional"],
+  ["61","D","b",1,"man","Cabos unipolares ou cabo multipolar em eletroduto enterrado"],
+  ["62","D","b",0,"man","Cabos unipolares ou cabo multipolar diretamente enterrado(s), sem proteção mecânica adicional (cabos com armação)"],
+  ["63","D","b",0,"man","Cabos unipolares ou cabo multipolar diretamente enterrado(s), com proteção mecânica adicional"],
+  ["71","A1","u",0,1,"Condutores isolados ou cabos unipolares em moldura"],
+  ["72","B1","u",0,1,"Condutores isolados ou cabos unipolares em canaleta provida de separações sobre parede"],
+  ["72A","B2","m",0,1,"Cabo multipolar em canaleta provida de separações"],
+  ["73","A1","b",0,1,"Condutores isolados em eletroduto, cabos unipolares ou cabo multipolar embutido(s) em caixilho de porta"],
+  ["74","A1","b",0,1,"Condutores isolados em eletroduto, cabos unipolares ou cabo multipolar embutido(s) em caixilho de janela"],
+].map(([id,ref,type,conduit,grp,t])=>({id,ref,type,conduit:!!conduit,grp,t}));
+const METHOD = new Map(METHODS.map(m=>[m.id,m]));
+
+// Tabela 40. Temperaturas de 10 °C a 80 °C, passo de 5 °C.
+const FCT_T=[10,15,20,25,30,35,40,45,50,55,60,65,70,75,80];
+const FCT = {
+  air:{ pvc:[1.22,1.17,1.12,1.06,1,0.94,0.87,0.79,0.71,0.61,0.50,null,null,null,null], epr:[1.15,1.12,1.08,1.04,1,0.96,0.91,0.87,0.82,0.76,0.71,0.65,0.58,0.50,0.41] },
+  soil:{ pvc:[1.10,1.05,1,0.95,0.89,0.84,0.77,0.71,0.63,0.55,0.45,null,null,null,null], epr:[1.07,1.04,1,0.96,0.93,0.89,0.85,0.80,0.76,0.71,0.65,0.60,0.53,0.46,0.38] },
+};
+// Tabela 42. Itens 2 a 5 não têm redução adicional acima de 9 circuitos.
+const FCA_N=[1,2,3,4,5,6,7,8,9,12,16,20];
+const FCA = [
+  [1,0.80,0.70,0.65,0.60,0.57,0.54,0.52,0.50,0.45,0.41,0.38],
+  [1,0.85,0.79,0.75,0.73,0.72,0.72,0.71,0.70],
+  [0.95,0.81,0.72,0.68,0.66,0.64,0.63,0.62,0.61],
+  [1,0.88,0.82,0.77,0.75,0.73,0.73,0.72,0.72],
+  [1,0.87,0.82,0.80,0.80,0.79,0.79,0.78,0.78],
+];
+const FCA_T = ["Feixe ao ar livre ou sobre superfície, ou em conduto fechado","Camada única sobre parede, piso, bandeja não perfurada ou prateleira","Camada única no teto","Camada única em bandeja perfurada, horizontal ou vertical","Camada única em leito ou suporte"];
+
+// Tabela 19 (Pirelli), V/A·km, cobre, 70 °C. Colunas: magnético FP 0,8 e 0,95; não magnético monofásico FP 0,8 e 0,95; trifásico FP 0,8 e 0,95.
+const T19=rows(`
+1.5 23 27.4 23.3 27.6 20.2 23.9
+2.5 14 16.8 14.3 16.9 12.4 14.7
+4 9.0 10.5 8.96 10.6 7.79 9.15
+6 5.87 7.00 6.03 7.07 5.25 6.14
+10 3.54 4.20 3.63 4.23 3.17 3.67
+16 2.27 2.70 2.32 2.68 2.03 2.33
+25 1.50 1.72 1.51 1.71 1.33 1.49
+35 1.12 1.25 1.12 1.25 0.98 1.09
+50 0.86 0.95 0.85 0.94 0.76 0.82
+70 0.64 0.67 0.62 0.67 0.55 0.59
+95 0.50 0.51 0.48 0.50 0.43 0.44
+120 0.42 0.42 0.40 0.41 0.36 0.36
+150 0.37 0.35 0.35 0.34 0.31 0.30
+185 0.32 0.30 0.30 0.29 0.27 0.25
+240 0.29 0.25 0.26 0.24 0.23 0.21
+300 0.27 0.22 0.23 0.20 0.21 0.18
+400 0.24 0.20 0.21 0.17 0.19 0.15
+500 0.23 0.19 0.19 0.16 0.17 0.14`);
+const X_TYP = 0.10; // Ω/km por condutor, fora da Tabela 19
+
+// Tabela 47.
+const MINSEC = { light:{cu:1.5, al:10, t:"Circuitos de iluminação"}, force:{cu:2.5, al:10, t:"Circuitos de força"}, ctrl:{cu:0.5, al:null, t:"Sinalização e controle"}, flex:{cu:0.75, al:null, t:"Ligação flexível, qualquer aplicação"} };
+// Tabela 48: seção da fase → seção mínima do neutro (acima de 25 mm²).
+const NEUTRAL = new Map([[35,25],[50,25],[70,35],[95,50],[120,70],[150,70],[185,95],[240,120],[300,150],[400,185]]);
+
+// Tabela A: diâmetro externo (mm) e área total (mm²) com isolação PVC.
+const WIRE_A = { fio:new Map([[1.5,[2.5,6.2]],[2.5,[3.4,9.1]],[4,[3.9,11.9]],[6,[4.4,15.2]],[10,[5.6,24.6]]]),
+  cabo:new Map([[1.5,[3.0,7.1]],[2.5,[3.7,10.7]],[4,[4.2,13.8]],[6,[4.8,18.1]],[10,[5.9,27.3]],[16,[6.9,37.4]],[25,[8.5,56.7]],[35,[9.5,71.0]],[50,[11.5,104]],[70,[13.5,133]],[95,[15.0,177]],[120,[16.5,214]],[150,[18.5,269]],[185,[20.5,330]],[240,[23.5,434]]]) };
+// Tabelas B e C: tamanho nominal (mm), área para 40% de ocupação (mm²) e equivalência em polegadas (Tabela E).
+const DUCT = {
+  pvc:{t:"PVC rígido", tab:"Tabela B", rows:[[16,52,"3/8"],[20,85,"1/2"],[25,143,"3/4"],[32,238,"1"],[40,410,"1 1/4"],[50,539,"1 1/2"],[60,876,"2"],[75,1415,"2 1/2"],[85,1990,"3"]]},
+  steel:{t:"aço galvanizado", tab:"Tabela C", rows:[[16,53,"3/8"],[20,90,"1/2"],[25,152,"3/4"],[31,246,"1"],[41,430,"1 1/4"],[47,567,"1 1/2"],[59,932,"2"],[75,1525,"2 1/2"],[88,2147,"3"]]},
+};
+// Tabela D: PVC rígido, pela maior seção e pelo número de condutores (2 a 10).
+const TAB_D=rows(`
+1.5 16 16 16 16 16 16 20 20 20
+2.5 16 16 16 20 20 20 20 25 25
+4 16 16 20 20 20 25 25 25 25
+6 16 20 20 25 25 25 25 32 32
+10 20 20 25 25 32 32 32 40 40
+16 20 25 25 32 32 40 40 40 40
+25 25 32 32 40 40 40 50 50 50
+35 25 32 40 40 50 50 50 50 60
+50 32 40 40 50 50 60 60 60 75
+70 40 40 50 50 60 60 75 75 75
+95 40 50 60 60 75 75 75 85 85
+120 50 50 60 75 75 75 85 85 -
+150 50 60 75 75 85 85 - - -
+185 50 75 75 85 85 - - - -
+240 60 75 85 - - - - - -`);
+
+const SYS = {
+  cc:{t:"Corrente contínua", ac:false, nc:2, k:2, phases:2, vt:"Tensão CC (V)"},
+  mono:{t:"CA monofásico, fase e neutro", ac:true, nc:2, k:2, phases:1, neutral:"full", t19:"mono", vt:"Tensão fase-neutro (V)"},
+  bif:{t:"CA bifásico, duas fases", ac:true, nc:2, k:2, phases:2, t19:"mono", vt:"Tensão entre fases (V)"},
+  tri:{t:"CA trifásico, 3 fases", ac:true, nc:3, k:Math.sqrt(3), phases:3, t19:"tri", vt:"Tensão entre fases (V)"},
+  trin:{t:"CA trifásico com neutro", ac:true, nc:3, k:Math.sqrt(3), phases:3, neutral:"t48", t19:"tri", vt:"Tensão entre fases (V)"},
+};
+
+function fmt(n, d=0) { return Number(n).toLocaleString("pt-BR", {maximumFractionDigits:d, minimumFractionDigits:0}); }
+function fmtS(s) { return fmt(s,2); }
+
+/* ---------- Cálculo ---------- */
+function designCurrent(p) {
+  const s=SYS[p.sys], tri=s.phases===3, V=p.v, eff=p.eff/100;
+  const den = s.ac ? (tri?Math.sqrt(3)*V:V) : V;
+  const dens = s.ac ? (tri?"√3 · V":"V") : "V";
+  const fp = s.ac ? p.fp : 1;
+  const fps = s.ac ? " · FP" : "";
+  switch (p.loadBy) {
+    case "A": return {I:p.load, how:`Ib informada = ${fmt(p.load,2)} A`};
+    case "kW": { const I=p.load*1000/(den*fp); return {I, P:p.load*1000, how:`Ib = P / (${dens}${fps}) = ${fmt(p.load*1000)} / (${s.ac&&tri?"1,732 · ":""}${fmt(V)}${s.ac?" · "+fmt(fp,2):""}) = ${fmt(I,2)} A`}; }
+    case "kVA": { const I=p.load*1000/den; return {I, how:`Ib = S / ${dens} = ${fmt(p.load*1000)} / (${tri?"1,732 · ":""}${fmt(V)}) = ${fmt(I,2)} A`}; }
+    case "cv": case "kWe": {
+      const Pm = p.loadBy==="cv" ? p.load*735.5 : p.load*1000;
+      const Pe = Pm/eff, I = Pe/(den*fp);
+      return {I, P:Pe, how:`P elétrica = P eixo / η = ${fmt(Pm)} / ${fmt(eff,3)} = ${fmt(Pe)} W${p.loadBy==="cv"?" (1 CV = 735,5 W)":""}\n  Ib = P / (${dens}${fps}) = ${fmt(Pe)} / (${s.ac&&tri?"1,732 · ":""}${fmt(V)}${s.ac?" · "+fmt(fp,2):""}) = ${fmt(I,2)} A`};
+    }
+  }
+  return {I:0, how:""};
+}
+function cableType(p, m) { return m.type==="b" ? p.cable : m.type; }
+function arrangement(p, m) {
+  const nc=SYS[p.sys].nc;
+  if (m.ref==="G") return nc===2 ? "f2" : (p.arr==="gv"?"gv":"gh");
+  if (cableType(p,m)==="m") return nc===2 ? "e2" : "e3";
+  if (nc===2) return "f2";
+  return ["f3t","f3p","gh","gv"].includes(p.arr) ? p.arr : "f3t";
+}
+function column(p, m) {
+  const nc=SYS[p.sys].nc;
+  if (REFS_AD.includes(m.ref)) {
+    const t=AMP[p.ins].ad;
+    return {table:t[p.mat], name:t.name, idx:REFS_AD.indexOf(m.ref)*2+(nc===3?1:0), ref:m.ref, label:`método ${m.ref}, ${nc} condutores carregados`};
+  }
+  const a=arrangement(p,m), t=AMP[p.ins].efg;
+  return {table:t[p.mat], name:t.name, idx:ARR[a].col, ref:ARR[a].ref, arr:a, label:`método ${ARR[a].ref}, ${ARR[a].t.toLowerCase()}`};
+}
+function fct(ins, soil, temp) {
+  const i = FCT_T.findIndex(x=>x>=temp);
+  if (i<0) return {f:null, row:null};
+  return {f:FCT[soil?"soil":"air"][ins][i], row:FCT_T[i]};
+}
+function fca(item, n, manual) {
+  if (item==="man") return {f:manual, col:null};
+  const row=FCA[item-1];
+  let i=FCA_N.findIndex(x=>x>=n);
+  if (i<0 || i>=row.length) i=row.length-1;
+  return {f:row[i], col:FCA_N[i]};
+}
+function rhoAt(mat, T) { const m=MAT[mat]; return m.rho20*(1+m.alpha*(T-20)); }
+// Queda unitária em V/A·km do circuito (ida e volta já incluídas).
+function dropUnit(p, S) {
+  const s=SYS[p.sys], T=INS[p.ins].tmax;
+  if (!s.ac) {
+    const R=rhoAt(p.mat,T)/S*1000;
+    return {u:2*R, how:`CC: 2 · ρ${T} / S = 2 · ${fmt(rhoAt(p.mat,T),5)} / ${fmtS(S)} · 1000 = ${fmt(2*R,3)} V/A·km`};
+  }
+  const fp=Math.min(Math.max(p.fp,0.5),1), sin=Math.sqrt(1-fp*fp);
+  const row = p.mat==="cu" ? T19.get(S) : null;
+  if (row) {
+    const c = p.duct==="steel" ? 0 : (s.t19==="mono"?2:4);
+    const a=row[c], b=row[c+1], u=a+(b-a)*(fp-0.8)/0.15;
+    const col = p.duct==="steel" ? "eletroduto magnético" : (s.t19==="mono"?"não magnético, monofásico":"não magnético, trifásico");
+    return {u, t19:true, how:`Tabela 19, ${col}: ${fmt(a,2)} (FP 0,8) e ${fmt(b,2)} (FP 0,95) → ${fmt(u,3)} V/A·km para FP ${fmt(fp,2)}`};
+  }
+  const R=rhoAt(p.mat,T)/S*1000, u=s.k*(R*fp+X_TYP*sin);
+  return {u, t19:false, how:`${s.k===2?"2":"√3"} · (R·cosφ + X·senφ) = ${s.k===2?"2":"1,732"} · (${fmt(R,3)} · ${fmt(fp,2)} + ${fmt(X_TYP,2)} · ${fmt(sin,2)}) = ${fmt(u,3)} V/A·km`};
+}
+function drop(p, S, I) {
+  const d=dropUnit(p,S), dV=d.u*I*p.len/1000;
+  return {...d, dV, pct: p.v>0 ? dV/p.v*100 : Infinity};
+}
+function nextSec(x, list) { return list.find(s=>s>=x-1e-9) ?? null; }
+
+function compute(p) {
+  const s=SYS[p.sys], m=METHOD.get(p.meth)||METHODS[2];
+  const errs=[], warns=[], tips=[];
+  const cur=designCurrent(p), Ib=cur.I;
+  const col=column(p,m);
+  const avail=SECS.filter(S=>col.table.has(S) && col.table.get(S)[col.idx]!=null);
+  const soil = m.ref==="D";
+  const ft=fct(p.ins, soil, p.temp);
+  const fa=fca(p.grp, Math.max(1,Math.round(p.ncir)), p.fman);
+  if (ft.f==null) errs.push(`${soil?"Temperatura do solo":"Temperatura ambiente"} de ${fmt(p.temp)} °C fora da Tabela 40 para isolação ${INS[p.ins].t}.`);
+  if (!(fa.f>0)) errs.push("Informe um fator de agrupamento maior que zero.");
+  if (!(p.v>0)) errs.push("Informe a tensão do circuito.");
+  if (!(Ib>0)) errs.push("Informe a carga do circuito.");
+  const f=(ft.f||0)*(fa.f||0);
+  const Ireq = p.inom>0 ? Math.max(Ib,p.inom) : Ib;
+  const Izreq = f>0 ? Ireq/f : Infinity;
+
+  // Critério 1: capacidade de condução.
+  const Scap = errs.length ? null : avail.find(S=>col.table.get(S)[col.idx]>=Izreq-1e-9) ?? null;
+  // Critério 2: queda de tensão.
+  let Sdrop=null;
+  if (!errs.length) {
+    if (p.len<=0) Sdrop=avail[0];
+    else Sdrop = avail.find(S=>drop(p,S,Ib).pct<=p.dvmax+1e-9) ?? null;
+  }
+  // Critério 3: seção mínima (Tabela 47).
+  const minDef=MINSEC[p.use][p.mat];
+  const Smin = minDef==null ? null : nextSec(minDef, avail);
+  if (minDef==null) errs.push(`A Tabela 47 não admite ${MAT[p.mat].t} em ${MINSEC[p.use].t.toLowerCase()}. Use cobre.`);
+
+  let S=null, crit=[];
+  if (!errs.length && Scap!=null && Sdrop!=null && Smin!=null) {
+    S=Math.max(Scap,Sdrop,Smin);
+    crit=[["cap",Scap],["drop",Sdrop],["min",Smin]].filter(([,v])=>v===S).map(([k])=>k);
+  }
+  const res={p,s,m,col,cur,Ib,ft,fa,f,Ireq,Izreq,Scap,Sdrop,Smin,minDef,S,crit,errs,warns,tips,avail,soil};
+  if (S!=null) {
+    res.Iz=col.table.get(S)[col.idx];
+    res.Izc=res.Iz*f;
+    res.dv=drop(p,S,Ib);
+    // Neutro e proteção.
+    if (s.neutral==="full") res.Sn={S, why:"monofásico: igual à fase"};
+    else if (s.neutral==="t48") {
+      if (p.nred && S>25) res.Sn = NEUTRAL.has(S) ? {S:NEUTRAL.get(S), why:"Tabela 48"} : {S:null, why:"fora da Tabela 48, acima de 400 mm²"};
+      else res.Sn={S, why:p.nred?"Tabela 48, fase até 25 mm²":"igual à fase"};
+    }
+    if (p.pe!=="no") {
+      const x = S<=16 ? S : S<=35 ? 16 : S/2;
+      res.Spe={S:nextSec(x, SECS), why:S<=16?"Tabela 58: SF ≤ 16, SPE = SF":S<=35?"Tabela 58: 16 < SF ≤ 35, SPE = 16":`Tabela 58: SF > 35, SPE = SF/2 = ${fmtS(S/2)} mm²`};
+    }
+    res.conduit = m.conduit ? conduit(p,m,res) : null;
+  }
+
+  // Avisos.
+  if (s.ac && (p.fp<0.8 || p.fp>0.95) && res.dv && res.dv.t19) warns.push(`FP ${fmt(p.fp,2)} fora da faixa 0,8 a 0,95 da Tabela 19: a queda unitária foi estendida pela reta entre as duas colunas.`);
+  if (res.dv && s.ac && !res.dv.t19) warns.push(p.mat==="al" ? "A Tabela 19 é só para cobre. A queda de tensão do alumínio usa a resistividade e uma reatância típica de 0,10 Ω/km." : "Seção fora da Tabela 19: a queda de tensão usa a resistividade e uma reatância típica de 0,10 Ω/km.");
+  if (soil && p.grp!=="man") warns.push("Método D, enterrado: a Tabela 42 não vale para cabos enterrados. Informe o fator de agrupamento manualmente com as tabelas próprias da NBR 5410.");
+  if (soil) warns.push("Método D: a capacidade supõe solo com resistividade térmica de 2,5 K·m/W e a temperatura informada é a do solo.");
+  if (m.ref==="G" && s.nc===2) warns.push("O método G só tem colunas para 3 condutores. Com 2 condutores carregados a página usa a coluna de unipolares justapostos do método F, a favor da segurança.");
+  if (ft.f!=null && ft.row!==p.temp && !(p.temp<10)) tips.push(`A Tabela 40 não tem a linha de ${fmt(p.temp)} °C: foi usada a de ${ft.row} °C.`);
+  if (p.grp==="1" && p.ncir>20) warns.push("Mais de 20 circuitos em feixe: a Tabela 42 para em 20. Foi usado 0,38.");
+  if (p.inom>0 && p.inom<Ib) errs.push(`O disjuntor de ${fmt(p.inom)} A é menor que a corrente de projeto de ${fmt(Ib,1)} A. A NBR 5410 pede Ib ≤ In ≤ Iz.`);
+  if (s.neutral==="t48" && p.nred && S>25) warns.push("Neutro reduzido pela Tabela 48 só vale com circuito equilibrado, harmônicas de 3ª ordem até 15% e neutro protegido contra sobrecorrente.");
+  if (S!=null && S<=1 && p.use!=="ctrl" && p.use!=="flex") warns.push("Seções abaixo de 1,5 mm² só servem a sinalização, controle ou ligações flexíveis.");
+  if (p.dvmax>4 && p.dvmax<=7) tips.push("Queda acima de 4% só cabe em alimentador, desde que o total da origem até a carga fique em 7% (Figura 10.11).");
+  if (p.dvmax>7) warns.push("Queda máxima acima dos 7% admitidos pela NBR 5410 da origem da instalação até a carga.");
+  if (p.mat==="al" && (p.use==="force" || p.use==="light")) tips.push("A NBR 5410 restringe condutores de alumínio a instalações industriais e comerciais com manutenção qualificada. Confira as condições na norma.");
+  return res;
+}
+
+function conduit(p, m, r) {
+  const s=r.s, multi=cableType(p,m)==="m", k=Math.max(1,Math.round(p.nduct));
+  const out={multi, k};
+  if (multi) {
+    const a=Math.PI*p.dext*p.dext/4;
+    out.n=k; out.area=a*k; out.how=`${k} × π · ${fmt(p.dext,1)}² / 4 = ${fmt(out.area,1)} mm²`;
+  } else {
+    const list=[];
+    for (let i=0;i<s.phases;i++) list.push(r.S);
+    if (r.Sn) list.push(r.Sn.S);
+    if (r.Spe && p.pe==="in") list.push(r.Spe.S);
+    const tab=WIRE_A[p.wire];
+    const miss=list.filter(x=>x==null||!tab.has(x));
+    out.list=list; out.n=list.length*k;
+    if (miss.length) { out.err=`A Tabela A não tem ${p.wire==="fio"?"fios":"cabos"} de ${[...new Set(miss.filter(x=>x!=null))].map(fmtS).join(", ")} mm².`; return out; }
+    out.area=list.reduce((a,x)=>a+tab.get(x)[1],0)*k;
+    const parts=[...new Set(list)].map(x=>`${list.filter(y=>y===x).length*k} × ${fmt(tab.get(x)[1],1)}`).join(" + ");
+    out.how=`${parts} = ${fmt(out.area,1)} mm²`;
+    // Tabela D: só PVC rígido, pela maior seção e pelo número de condutores.
+    const big=Math.max(...list);
+    if (p.duct==="pvc" && TAB_D.has(big) && out.n>=2 && out.n<=10) out.tabD=TAB_D.get(big)[out.n-2];
+  }
+  out.rate = out.n===1?0.53 : out.n===2?0.31 : 0.40;
+  const d=DUCT[p.duct];
+  const pick=d.rows.find(([mm,a40])=>mm>=20 && (a40/0.4)*out.rate>=out.area-1e-9);
+  out.duct=d; out.pick=pick||null;
+  return out;
+}
+</script>
+
+<script>
+/* ---------- Interface ---------- */
+const $ = id => document.getElementById(id);
+const FIELDS=["sys","v","loadby","load","fp","eff","len","dvmax","use","inom","mat","ins","meth","cable","arr","duct","temp","grp","ncir","fman","pe","nred","wire","dext","nduct"];
+const KEY="dimensionamento-cabos-v1";
+function esc(s){ const e=document.createElement("span"); e.textContent=s; return e.innerHTML; }
+function img(name, alt) { return `<span class="plate"><img src="img/metodos/${name}.png" alt="${esc(alt)}" loading="lazy"></span>`; }
+
+$("meth").innerHTML=METHODS.map(m=>`<option value="${m.id}">${m.id} · ${esc(m.t)} (${m.ref==="EF"?"E ou F":m.ref})</option>`).join("");
+$("meth").value="3";
+
+function params() {
+  const n=id=>{ const v=parseFloat($(id).value); return Number.isFinite(v)?v:0; };
+  return { sys:$("sys").value, v:n("v"), loadBy:$("loadby").value, load:n("load"), fp:n("fp")||1, eff:n("eff")||100, len:n("len"), dvmax:n("dvmax"),
+    use:$("use").value, inom:n("inom"), mat:$("mat").value, ins:$("ins").value, meth:$("meth").value, cable:$("cable").value, arr:$("arr").value,
+    duct:$("duct").value, temp:n("temp"), grp:$("grp").value==="man"?"man":+$("grp").value, ncir:n("ncir")||1, fman:n("fman"),
+    pe:$("pe").value, nred:$("nred").value==="1", wire:$("wire").value, dext:n("dext"), nduct:n("nduct")||1 };
+}
+
+function syncForm(p) {
+  const s=SYS[p.sys], m=METHOD.get(p.meth);
+  $("v-lab").textContent=s.vt;
+  const lb={A:"Corrente (A)",kW:"Potência ativa (kW)",kVA:"Potência aparente (kVA)",cv:"Potência no eixo (CV)",kWe:"Potência no eixo (kW)"};
+  $("load-lab").textContent=lb[p.loadBy];
+  [...$("loadby").options].forEach(o=>{ if(o.value==="kVA") o.disabled=!s.ac; });
+  if (!s.ac && p.loadBy==="kVA") { $("loadby").value="kW"; }
+  $("fp-wrap").hidden=!s.ac;
+  $("eff-wrap").hidden=!(p.loadBy==="cv"||p.loadBy==="kWe");
+  $("duct-wrap").hidden=!(s.ac || m.conduit);
+  $("cable-wrap").hidden=m.type!=="b";
+  // Disposição: só para unipolares nos métodos E/F com 3 carregados, ou no método G.
+  const ct=cableType(p,m);
+  let arrOpts=[];
+  if (m.ref==="G" && s.nc===3) arrOpts=["gh","gv"];
+  else if (m.ref==="EF" && ct==="u" && s.nc===3) arrOpts=["f3t","f3p","gh","gv"];
+  const cur=$("arr").value;
+  $("arr").innerHTML=arrOpts.map(a=>`<option value="${a}">${esc(ARR[a].t)}</option>`).join("");
+  if (arrOpts.includes(cur)) $("arr").value=cur;
+  $("arr-wrap").hidden=!arrOpts.length;
+  $("temp-lab").textContent=m.ref==="D"?"Temperatura do solo (°C)":"Temperatura ambiente (°C)";
+  $("fman-wrap").hidden=$("grp").value!=="man";
+  $("nred-wrap").hidden=s.neutral!=="t48";
+  $("conduit-in").hidden=!m.conduit; $("conduit-none").hidden=m.conduit;
+  $("dext-wrap").hidden=!(m.conduit && ct==="m");
+  $("wire").closest("label").hidden=!(m.conduit && ct!=="m");
+  // Figura do método.
+  const ref=m.ref==="EF"?(ct==="m"?"E (cabo multipolar)":"F (cabos unipolares)"):m.ref;
+  $("meth-fig").innerHTML=`${img("m"+m.id,"Esquema do método de instalação "+m.id)}<div><p><b>Método ${m.id}.</b> ${esc(m.t)}.</p><p class="ref">Método de referência ${ref}</p></div>`;
+  const showArr = m.ref==="EF" || m.ref==="G";
+  $("arr-fig").hidden=!showArr;
+  if (showArr) { const a=arrangement(params(),m); $("arr-fig").innerHTML=`${img(ARR[a].img,ARR[a].t)}<div><p>${esc(ARR[a].t)}.</p><p class="ref">Coluna do método ${ARR[a].ref} nas Tabelas 38 e 39</p></div>`; }
+}
+
+function composition(r) {
+  const s=r.s, S=fmtS(r.S);
+  let t = s.phases===1 ? `F + N: 2 × ${S} mm²` : !s.ac ? `2 × ${S} mm² (+ e −)` : `${s.phases} × ${S} mm²`;
+  if (s.neutral==="t48" && r.Sn) t+=` + N ${r.Sn.S!=null?fmtS(r.Sn.S):"?"} mm²`;
+  if (r.Spe) t+=` + PE ${fmtS(r.Spe.S)} mm²`;
+  return t;
+}
+
+function update() {
+  syncForm(params());
+  const p=params(), r=compute(p);
+  const v=$("verdict");
+  if (r.S!=null) {
+    v.className="verdict";
+    v.innerHTML=`<span class="eyebrow">Seção recomendada</span><div class="vtitle">${fmtS(r.S)} mm² de ${MAT[p.mat].t}, ${INS[p.ins].t}</div><div style="font-weight:600">${esc(composition(r))}</div><p>Iz corrigida de ${fmt(r.Izc,1)} A para Ib de ${fmt(r.Ib,1)} A. Queda de ${fmt(r.dv.pct,2)}% em ${fmt(p.len)} m, com limite de ${fmt(p.dvmax,1)}%.</p>`;
+  } else {
+    v.className="verdict fail";
+    const why = r.errs.length ? r.errs[0] : r.Scap==null ? `Nenhuma seção até 1000 mm² conduz ${fmt(r.Izreq,1)} A nesse método. Divida o circuito em condutores em paralelo ou mude o método de instalação.` : r.Sdrop==null ? `Nenhuma seção até 1000 mm² mantém a queda em ${fmt(p.dvmax,1)}%. Reduza o comprimento, suba a tensão ou use condutores em paralelo.` : "Revise os dados.";
+    v.innerHTML=`<span class="eyebrow">Sem seção que atenda</span><div class="vtitle">Revise o circuito</div><p>${esc(why)}</p>`;
+  }
+  $("nums").innerHTML=[
+    [fmt(r.Ib,1)+" A","Corrente de projeto Ib"],
+    [r.S!=null?fmt(r.Izc,1)+" A":"–",r.S!=null?`Iz corrigida, ${fmt(r.Iz)} A na tabela`:"Iz corrigida"],
+    [r.S!=null?fmt(r.dv.pct,2)+" %":"–",r.S!=null?`Queda de tensão, ${fmt(r.dv.dV,2)} V`:"Queda de tensão"],
+    [r.f>0?fmt(r.f,3):"–",`FCT ${r.ft.f!=null?fmt(r.ft.f,2):"–"} × FCA ${r.fa.f>0?fmt(r.fa.f,2):"–"}`],
+  ].map(([b,s])=>`<div class="num"><b>${b}</b><span>${esc(s)}</span></div>`).join("");
+  $("alerts").innerHTML=r.errs.slice(r.S==null?1:0).map(w=>`<div class="alert bad">${esc(w)}</div>`).join("")+r.warns.map(w=>`<div class="alert warn">${esc(w)}</div>`).join("")+r.tips.map(w=>`<div class="alert tip">${esc(w)}</div>`).join("");
+
+  const rungs=[];
+  const capWhy = r.Scap!=null ? `Iz necessária = ${p.inom>0?"max(Ib, In)":"Ib"} / (FCT · FCA) = ${fmt(r.Ireq,1)} / ${fmt(r.f,3)} = ${fmt(r.Izreq,1)} A. Na ${r.col.name}, ${r.col.label}, ${fmtS(r.Scap)} mm² conduz ${fmt(r.col.table.get(r.Scap)[r.col.idx])} A.` : r.errs.length ? "Sem cálculo: corrija os dados." : `Nenhuma seção da ${r.col.name} conduz ${fmt(r.Izreq,1)} A.`;
+  rungs.push({id:"cap",t:"Capacidade de condução de corrente",S:r.Scap,why:capWhy});
+  let dropWhy="Sem cálculo: corrija os dados.";
+  if (!r.errs.length) {
+    if (r.Sdrop!=null) { const d=drop(p,r.Sdrop,r.Ib); dropWhy=`Com ${fmtS(r.Sdrop)} mm², ΔV = ${fmt(d.u,3)} V/A·km · ${fmt(r.Ib,1)} A · ${fmt(p.len/1000,3)} km = ${fmt(d.dV,2)} V, ou ${fmt(d.pct,2)}% de ${fmt(p.v)} V.`; }
+    else dropWhy=`Nenhuma seção mantém a queda em ${fmt(p.dvmax,1)}%.`;
+  }
+  rungs.push({id:"drop",t:"Queda de tensão",S:r.Sdrop,why:dropWhy});
+  rungs.push({id:"min",t:"Seção mínima (Tabela 47)",S:r.Smin,why:r.minDef!=null?`${MINSEC[p.use].t}: ${fmtS(r.minDef)} mm² de ${MAT[p.mat].t}.${r.Smin!==r.minDef&&r.Smin!=null?` A menor seção da tabela de ${MAT[p.mat].t} é ${fmtS(r.Smin)} mm².`:""}`:`A Tabela 47 não prevê ${MAT[p.mat].t} nesse uso.`});
+  if (p.inom>0 && r.S!=null) rungs.push({id:"prot",t:"Proteção contra sobrecarga",S:null,ok:r.Ib<=p.inom && p.inom<=r.Izc+1e-9,why:`Ib ≤ In ≤ Iz: ${fmt(r.Ib,1)} ≤ ${fmt(p.inom)} ≤ ${fmt(r.Izc,1)} A.`});
+  $("ladder").innerHTML=rungs.map(x=>{
+    const pick=r.crit.includes(x.id);
+    const chip = x.id==="prot" ? (x.ok?`<span class="chip ok">Atende</span>`:`<span class="chip no">Não atende</span>`)
+      : x.S==null ? `<span class="chip no">Não atende</span>` : pick ? `<span class="chip pick">Determinante</span>` : `<span class="chip ok">Atende</span>`;
+    return `<li class="rung${pick?" pick":""}"><h3>${esc(x.t)}</h3>${chip}${x.S!=null?`<p class="prod">${fmtS(x.S)} mm²</p>`:""}<p>${esc(x.why)}</p></li>`;
+  }).join("");
+
+  // Condutores e eletroduto.
+  const kv=[];
+  if (r.S!=null) {
+    kv.push([`${r.s.phases===1?"Fase":!r.s.ac?"Positivo e negativo":"Fases"}<small>${esc(r.col.name)}, ${esc(r.col.label)}</small>`, `${!r.s.ac?2:r.s.phases} × ${fmtS(r.S)} mm²`]);
+    if (r.Sn) kv.push([`Neutro<small>${esc(r.Sn.why)}</small>`, r.Sn.S!=null?`${fmtS(r.Sn.S)} mm²`:"consultar"]);
+    if (r.Spe) kv.push([`Condutor de proteção<small>${esc(r.Spe.why)}</small>`, `${fmtS(r.Spe.S)} mm²`]);
+    const c=r.conduit;
+    if (c) {
+      if (c.err) kv.push([`Eletroduto<small>${esc(c.err)}</small>`,"–"]);
+      else {
+        kv.push([`Área ocupada<small>${c.multi?"cabo multipolar pelo diâmetro informado":"Tabela A, "+(p.wire==="fio"?"fios":"cabos")}: ${esc(c.how)}</small>`, `${fmt(c.area,1)} mm²`]);
+        kv.push([`Eletroduto de ${esc(c.duct.t)}<small>${esc(c.duct.tab)}, ocupação máxima de ${fmt(c.rate*100)}% para ${c.n} condutor${c.n>1?"es":""}, mínimo de 20 mm</small>`, c.pick?`${c.pick[0]} mm (${c.pick[2]}")`:"acima de 3\""]);
+        if (c.tabD) kv.push([`Conferência pela Tabela D<small>maior seção e ${c.n} condutores, PVC rígido</small>`, `${c.tabD} mm`]);
+      }
+    }
+  }
+  $("cond").innerHTML=kv.length?kv.map(([a,b])=>`<dt>${a}</dt><dd>${esc(b)}</dd>`).join(""):`<dt>Sem seção calculada.</dt><dd></dd>`;
+  $("conduit-out").innerHTML = (r.conduit && !r.conduit.multi) ? `<p class="note">Taxa máxima de ocupação da seção do eletroduto: 53% para um condutor, 31% para dois e 40% para três ou mais.</p><span class="plate"><img src="img/referencia/eletroduto-ocupacao.jpg" alt="Corte de eletroduto com cinco condutores ocupando 40% da área interna e 60% livre" width="705" height="307" loading="lazy"></span>` : "";
+  $("memo").textContent=memo(p,r);
+  save();
+}
+
+function memo(p, r) {
+  const L=[], s=r.s;
+  L.push("CIRCUITO");
+  L.push(`  ${s.t}, ${fmt(p.v)} V${s.ac?`, FP ${fmt(p.fp,2)}`:""}, ${fmt(p.len)} m`);
+  L.push(`  ${r.cur.how}`);
+  if (p.inom>0) L.push(`  Disjuntor In = ${fmt(p.inom)} A`);
+  L.push("");
+  L.push("INSTALAÇÃO");
+  L.push(`  ${MAT[p.mat].T}, isolação ${INS[p.ins].t} (${INS[p.ins].tmax} °C)`);
+  L.push(`  Método ${r.m.id}: ${r.m.t}`);
+  L.push(`  Referência: ${r.col.name}, ${r.col.label}`);
+  L.push("");
+  L.push("CORREÇÕES");
+  L.push(`  FCT (Tabela 40, ${r.soil?"solo":"ar"}, ${INS[p.ins].t}): ${fmt(p.temp)} °C${r.ft.row!=null&&r.ft.row!==p.temp?` → linha de ${r.ft.row} °C`:""} = ${r.ft.f!=null?fmt(r.ft.f,2):"fora da tabela"}`);
+  L.push(p.grp==="man" ? `  FCA informado manualmente = ${fmt(p.fman,2)}` : `  FCA (Tabela 42, item ${p.grp}, ${fmt(p.ncir)} circuito${p.ncir>1?"s":""}${r.fa.col!==p.ncir?` → coluna ${r.fa.col}`:""}) = ${fmt(r.fa.f,2)}`);
+  if (r.f>0) L.push(`  FCT · FCA = ${fmt(r.f,3)}`);
+  L.push("");
+  L.push("CAPACIDADE DE CONDUÇÃO");
+  if (r.f>0 && Number.isFinite(r.Izreq)) L.push(`  Iz ≥ ${p.inom>0?"max(Ib, In)":"Ib"} / (FCT · FCA) = ${fmt(r.Ireq,2)} / ${fmt(r.f,3)} = ${fmt(r.Izreq,2)} A`);
+  L.push(r.Scap!=null ? `  ${fmtS(r.Scap)} mm²: ${fmt(r.col.table.get(r.Scap)[r.col.idx])} A na ${r.col.name}` : "  Nenhuma seção atende");
+  L.push("");
+  L.push("QUEDA DE TENSÃO");
+  if (r.Sdrop!=null) {
+    const d=drop(p,r.Sdrop,r.Ib);
+    L.push(`  ${d.how}`);
+    L.push(`  ΔV = u · Ib · L = ${fmt(d.u,3)} · ${fmt(r.Ib,2)} · ${fmt(p.len/1000,3)} = ${fmt(d.dV,2)} V = ${fmt(d.pct,2)}% (limite ${fmt(p.dvmax,1)}%)`);
+    L.push(`  Menor seção que atende: ${fmtS(r.Sdrop)} mm²`);
+  } else L.push("  Nenhuma seção atende");
+  L.push("");
+  L.push("SEÇÃO MÍNIMA");
+  L.push(`  Tabela 47, ${MINSEC[p.use].t.toLowerCase()}: ${r.minDef!=null?fmtS(r.minDef)+" mm²":"não prevista"}`);
+  L.push("");
+  L.push("RESULTADO");
+  if (r.S!=null) {
+    L.push(`  Seção adotada: ${fmtS(r.S)} mm², a maior entre ${fmtS(r.Scap)} (corrente), ${fmtS(r.Sdrop)} (queda) e ${fmtS(r.Smin)} (mínima)`);
+    L.push(`  Iz = ${fmt(r.Iz)} · ${fmt(r.f,3)} = ${fmt(r.Izc,1)} A ≥ ${fmt(r.Ireq,1)} A`);
+    L.push(`  ΔV = ${fmt(r.dv.dV,2)} V = ${fmt(r.dv.pct,2)}%`);
+    L.push(`  ${composition(r)}`);
+    if (r.Sn) L.push(`  Neutro: ${r.Sn.S!=null?fmtS(r.Sn.S)+" mm²":"consultar"} (${r.Sn.why})`);
+    if (r.Spe) L.push(`  PE: ${fmtS(r.Spe.S)} mm² (${r.Spe.why})`);
+    const c=r.conduit;
+    if (c && !c.err) {
+      L.push(`  Eletroduto: área ocupada ${c.how}`);
+      L.push(`  ${c.duct.tab}, ${c.duct.t}, ocupação ${fmt(c.rate*100)}%: ${c.pick?`${c.pick[0]} mm (${c.pick[2]}")`:"acima da tabela"}${c.tabD?`; Tabela D: ${c.tabD} mm`:""}`);
+    } else if (c && c.err) L.push(`  Eletroduto: ${c.err}`);
+  } else L.push("  Nenhuma seção atende. "+(r.errs[0]||""));
+  return L.join("\n");
+}
+
+function loadSaved() { try { const raw=localStorage.getItem(KEY); return raw?JSON.parse(raw):null; } catch(e) { return null; } }
+function save() { try { const f={}; FIELDS.forEach(k=>f[k]=$(k).value); localStorage.setItem(KEY, JSON.stringify(f)); } catch(e) {} }
+
+function buildData() {
+  // Métodos com os esquemas.
+  let h=`<table class="gallery"><thead><tr><th>Nº</th><th>Esquema</th><th>Descrição</th><th>Referência</th></tr></thead><tbody>`;
+  METHODS.forEach(m=>{ h+=`<tr><td>${m.id}</td><td>${img("m"+m.id,"Esquema do método "+m.id)}</td><td class="wrapt">${esc(m.t)}</td><td>${m.ref==="EF"?"E (multipolar)<br>F (unipolares)":m.ref}</td></tr>`; });
+  h+=`</tbody></table><h3 style="margin-top:14px">Arranjos dos métodos E, F e G (Tabelas 38 e 39)</h3><table class="gallery"><tbody>`;
+  Object.values(ARR).forEach(a=>{ h+=`<tr><td>${img(a.img,a.t)}</td><td class="wrapt">${esc(a.t)}</td><td>Método ${a.ref}</td></tr>`; });
+  $("t-meth").innerHTML=h+"</tbody></table>";
+
+  // Capacidades.
+  const ampTable=(title,note,t,heads)=>{
+    let x=`<h3>${title}</h3><p class="note">${note}</p><table><thead><tr><th>mm²</th>${heads.map(c=>`<th class="n">${c}</th>`).join("")}</tr></thead><tbody>`;
+    ["cu","al"].forEach(mat=>{ x+=`<tr><th colspan="${heads.length+1}">${MAT[mat].T}</th></tr>`; t[mat].forEach((v,S)=>{ x+=`<tr><td>${fmtS(S)}</td>${v.map(n=>`<td class="n">${n==null?"–":fmt(n,1)}</td>`).join("")}</tr>`; }); });
+    return x+"</tbody></table>";
+  };
+  const AD=REFS_AD.flatMap(r=>[r+" 2",r+" 3"]), EFG=["E 2","E 3","F 2 just.","F 3 trif.","F 3 plano","G horiz.","G vert."];
+  $("t-amp").innerHTML=
+    ampTable("Tabela 36: PVC, métodos A1 a D","Ampères. Condutor a 70 °C, ambiente de 30 °C (ar) ou 20 °C (solo). Número de condutores carregados após o método.",AMP.pvc.ad,AD)+
+    ampTable("Tabela 37: EPR ou XLPE, métodos A1 a D","Ampères. Condutor a 90 °C, ambiente de 30 °C (ar) ou 20 °C (solo).",AMP.epr.ad,AD)+
+    ampTable("Tabela 38: PVC, métodos E, F e G","Ampères. Condutor a 70 °C, ambiente de 30 °C.",AMP.pvc.efg,EFG)+
+    ampTable("Tabela 39: EPR ou XLPE, métodos E, F e G","Ampères. Condutor a 90 °C, ambiente de 30 °C. Cobre 300 mm², E 3: 621 A (a reprodução traz 261).",AMP.epr.efg,EFG);
+
+  // Fatores.
+  let f=`<h3>Tabela 35: temperaturas características</h3><table><thead><tr><th>Isolação</th><th class="n">Serviço contínuo</th><th class="n">Sobrecarga</th><th class="n">Curto-circuito</th></tr></thead><tbody>
+    <tr><td>PVC</td><td class="n">70 °C</td><td class="n">100 °C</td><td class="n">160 °C</td></tr>
+    <tr><td>EPR</td><td class="n">90 °C</td><td class="n">130 °C</td><td class="n">250 °C</td></tr>
+    <tr><td>XLPE</td><td class="n">90 °C</td><td class="n">130 °C</td><td class="n">250 °C</td></tr></tbody></table>`;
+  f+=`<h3>Tabela 40: fator de correção de temperatura</h3><p class="note">Referência de 30 °C para linhas não subterrâneas e de 20 °C no solo para linhas subterrâneas.</p><table><thead><tr><th>°C</th><th class="n">Ar, PVC</th><th class="n">Ar, EPR/XLPE</th><th class="n">Solo, PVC</th><th class="n">Solo, EPR/XLPE</th></tr></thead><tbody>`;
+  FCT_T.forEach((t,i)=>{ const c=v=>v==null?"–":fmt(v,2); f+=`<tr><td>${t}</td><td class="n">${c(FCT.air.pvc[i])}</td><td class="n">${c(FCT.air.epr[i])}</td><td class="n">${c(FCT.soil.pvc[i])}</td><td class="n">${c(FCT.soil.epr[i])}</td></tr>`; });
+  f+=`</tbody></table><h3>Tabela 42: fator de agrupamento</h3><p class="note">Itens 2 a 5: nenhum fator adicional acima de 9 circuitos. Item 1 vale para os métodos A a F, itens 2 e 3 para o método C, itens 4 e 5 para os métodos E e F.</p><table><thead><tr><th>Item</th><th>Disposição</th>${FCA_N.map(n=>`<th class="n">${n}</th>`).join("")}</tr></thead><tbody>`;
+  FCA.forEach((row,i)=>{ f+=`<tr><td>${i+1}</td><td class="wrapt">${FCA_T[i]}</td>${FCA_N.map((n,j)=>`<td class="n">${row[j]!=null?fmt(row[j],2):"–"}</td>`).join("")}</tr>`; });
+  f+=`</tbody></table><h3>Número de condutores carregados</h3><ul class="src"><li>Trifásico sem neutro: 3. Trifásico com neutro equilibrado: 3 (4 com harmônicas no neutro).</li><li>Monofásico a 2 condutores e bifásico a 2 condutores: 2. Monofásico ou bifásico a 3 condutores: 3.</li><li>Corrente contínua: 2.</li></ul>`;
+  $("t-fac").innerHTML=f;
+
+  // Queda de tensão.
+  let d=`<div class="duo"><p class="note">Fio Pirastic, cabo Pirastic e Pirastic Flex. Eletroduto e eletrocalha com área de cabos até 40% da área interna. Condutor a 70 °C. Multiplique por Ib (A) e pelo comprimento (km) para ter a queda em volts.</p><span class="plate"><img src="img/referencia/queda-tensao-limites.png" alt="Figura 10.11: limites de queda de tensão" width="465" height="425" loading="lazy"></span></div>
+  <table><thead><tr><th rowspan="2">mm²</th><th class="n" colspan="2">Magnético, mono e trifásico</th><th class="n" colspan="2">Não magnético, monofásico</th><th class="n" colspan="2">Não magnético, trifásico</th></tr><tr>${"<th class='n'>FP 0,8</th><th class='n'>FP 0,95</th>".repeat(3)}</tr></thead><tbody>`;
+  T19.forEach((v,S)=>{ d+=`<tr><td>${fmtS(S)}</td>${v.map(n=>`<td class="n">${fmt(n,2)}</td>`).join("")}</tr>`; });
+  $("t-dv").innerHTML=d+"</tbody></table>";
+
+  // Seções.
+  let s=`<h3>Tabela 47: seção mínima</h3><table><thead><tr><th>Instalação</th><th>Utilização</th><th class="n">Seção mínima</th></tr></thead><tbody>
+    <tr><td>Cabos isolados</td><td>Iluminação</td><td class="n">1,5 Cu · 10 Al</td></tr>
+    <tr><td>Cabos isolados</td><td>Força</td><td class="n">2,5 Cu · 10 Al</td></tr>
+    <tr><td>Cabos isolados</td><td>Sinalização e controle</td><td class="n">0,5 Cu</td></tr>
+    <tr><td>Condutores nus</td><td>Força</td><td class="n">10 Cu · 10 Al</td></tr>
+    <tr><td>Condutores nus</td><td>Sinalização e controle</td><td class="n">4 Cu</td></tr>
+    <tr><td>Ligações flexíveis</td><td>Equipamento específico</td><td class="n">norma do equipamento</td></tr>
+    <tr><td>Ligações flexíveis</td><td>Qualquer outra aplicação</td><td class="n">0,75 Cu</td></tr>
+    <tr><td>Ligações flexíveis</td><td>Extrabaixa tensão, aplicações especiais</td><td class="n">0,75 Cu</td></tr></tbody></table>
+    <h3>Tabela 48: neutro de trifásico em estrela equilibrado</h3><p class="note">Em circuitos monofásicos o neutro tem a mesma seção da fase.</p><table><thead><tr><th class="n">Fase (mm²)</th><th class="n">Neutro mínimo (mm²)</th></tr></thead><tbody><tr><td class="n">S ≤ 25</td><td class="n">S</td></tr>`;
+  NEUTRAL.forEach((n,S)=>{ s+=`<tr><td class="n">${S}</td><td class="n">${n}</td></tr>`; });
+  s+=`</tbody></table><h3>Tabela 58: condutor de proteção</h3><table><thead><tr><th class="n">Fase SF (mm²)</th><th class="n">Proteção SPE (mm²)</th></tr></thead><tbody><tr><td class="n">SF ≤ 16</td><td class="n">SF</td></tr><tr><td class="n">16 &lt; SF ≤ 35</td><td class="n">16</td></tr><tr><td class="n">SF &gt; 35</td><td class="n">SF / 2</td></tr></tbody></table>`;
+  $("t-sec").innerHTML=s;
+
+  // Eletrodutos.
+  let e=`<div class="duo"><div class="note" style="display:grid;gap:6px"><p>Ocupação máxima da área interna: 53% para um condutor ou cabo, 31% para dois e 40% para três ou mais.</p><p>Roteiro: some as áreas totais da Tabela A e escolha na Tabela B ou C o primeiro tamanho com área maior que a soma. Em instalação elétrica, o eletroduto tem no mínimo 20 mm.</p></div><span class="plate"><img src="img/referencia/eletroduto-ocupacao.jpg" alt="Eletroduto com 40% da área ocupada por condutores" width="705" height="307" loading="lazy"></span></div>
+  <h3>Tabela A: área dos condutores com isolação PVC</h3><table><thead><tr><th class="n">mm²</th><th class="n">Fio: Ø (mm)</th><th class="n">Fio: área (mm²)</th><th class="n">Cabo: Ø (mm)</th><th class="n">Cabo: área (mm²)</th></tr></thead><tbody>`;
+  WIRE_A.cabo.forEach((c,S)=>{ const w=WIRE_A.fio.get(S); e+=`<tr><td class="n">${fmtS(S)}</td><td class="n">${w?fmt(w[0],1):"–"}</td><td class="n">${w?fmt(w[1],1):"–"}</td><td class="n">${fmt(c[0],1)}</td><td class="n">${fmt(c[1],1)}</td></tr>`; });
+  e+=`</tbody></table><h3>Tabelas B e C: área útil com 40% de ocupação</h3><table><thead><tr><th class="n">PVC rígido (mm)</th><th class="n">40% (mm²)</th><th class="n">Aço galvanizado (mm)</th><th class="n">40% (mm²)</th><th class="n">Polegadas (Tabela E)</th></tr></thead><tbody>`;
+  DUCT.pvc.rows.forEach((r,i)=>{ const a=DUCT.steel.rows[i]; e+=`<tr><td class="n">${r[0]}</td><td class="n">${fmt(r[1])}</td><td class="n">${a[0]}</td><td class="n">${fmt(a[1])}</td><td class="n">${r[2]}"</td></tr>`; });
+  e+=`</tbody></table><h3>Tabela D: eletroduto de PVC rígido pela maior seção</h3><table><thead><tr><th class="n">mm²</th>${[2,3,4,5,6,7,8,9,10].map(n=>`<th class="n">${n} cond.</th>`).join("")}</tr></thead><tbody>`;
+  TAB_D.forEach((v,S)=>{ e+=`<tr><td class="n">${fmtS(S)}</td>${v.map(n=>`<td class="n">${n==null?"–":n}</td>`).join("")}</tr>`; });
+  $("t-duct").innerHTML=e+"</tbody></table>";
+}
+
+$("copy").addEventListener("click",async()=>{
+  const b=$("copy");
+  try { await navigator.clipboard.writeText($("memo").textContent); b.textContent="Memorial copiado"; }
+  catch(e) { const s=getSelection(), rg=document.createRange(); rg.selectNodeContents($("memo")); s.removeAllRanges(); s.addRange(rg); b.textContent="Texto selecionado: use Ctrl+C"; }
+  setTimeout(()=>{b.textContent="Copiar memorial";},2500);
+});
+// Ao trocar de método, sugere a linha da Tabela 42 e a construção do cabo.
+$("meth").addEventListener("input",()=>{
+  const m=METHOD.get($("meth").value);
+  $("grp").value=String(m.grp);
+  if (m.type!=="b") $("cable").value=m.type;
+});
+$("sys").addEventListener("input",()=>{
+  const v=+$("v").value, s=$("sys").value;
+  if (s==="cc" && (v===380||v===220||v===127)) $("v").value=24;
+  else if (s==="mono" && (v===380||v===24)) $("v").value=220;
+  else if ((s==="tri"||s==="trin"||s==="bif") && (v===24||v===127)) $("v").value=380;
+});
+FIELDS.forEach(id=>$(id).addEventListener("input",update));
+
+const saved=loadSaved();
+if (saved) FIELDS.forEach(k=>{ if (saved[k]!==undefined) { const el=$(k); syncForm(params()); el.value=saved[k]; } });
+buildData(); update();
+</script>
+</body>
+</html>

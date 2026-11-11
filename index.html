@@ -38,6 +38,10 @@ h2 { font-size: 21px; font-weight: 600; }
 h3 { font-size: 16px; font-weight: 600; }
 p { margin: 0; }
 .sub { color: var(--muted); max-width: 72ch; margin-top: 6px; }
+.tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line-strong); margin-bottom: 14px; }
+.tabs a { padding: 7px 14px; text-decoration: none; color: var(--muted); font: 600 15px var(--display); border: 1px solid transparent; border-bottom: 0; margin-bottom: -1px; }
+.tabs a:hover { color: var(--accent); }
+.tabs a[aria-current="page"] { color: var(--fg); background: var(--panel); border-color: var(--line-strong); }
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 .col { display: grid; gap: 22px; min-width: 0; }
 section.sheet { background: var(--panel); border: 1px solid var(--line); padding: 18px; display: grid; gap: 14px; min-width: 0; }
@@ -110,6 +114,10 @@ a { color: var(--accent); }
 
 <div class="wrap">
   <header>
+    <nav class="tabs" aria-label="Ferramentas">
+      <a href="index.html" aria-current="page">Balanço térmico</a>
+      <a href="cabos.html">Dimensionamento de cabos</a>
+    </nav>
     <h1>Balanço Térmico de Painel</h1>
     <p class="sub">Some as perdas dos inversores PowerFlex 523, 525, 753 e 755, informe o gabinete e o ambiente, e veja qual solução de climatização Rittal atende o painel. O projeto abaixo é um exemplo: troque pelos seus dados.</p>
   </header>
